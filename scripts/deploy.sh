@@ -20,7 +20,8 @@ echo "[deploy] compose up"
 docker compose -f docker-compose.prod.yml up -d --build
 
 echo "[deploy] db push (best-effort)"
-docker compose -f docker-compose.prod.yml exec -T api pnpm --filter @flowers-tg/api db:push || true
+# The production runtime image does not include pnpm; run the compiled push script directly.
+docker compose -f docker-compose.prod.yml exec -T api node dist/infra/db/push.js || true
 
 echo "[deploy] ps"
 docker compose -f docker-compose.prod.yml ps
