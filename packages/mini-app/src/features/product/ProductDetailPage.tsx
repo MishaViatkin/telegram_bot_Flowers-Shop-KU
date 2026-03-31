@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import type { CartItem } from "@flowers-tg/shared";
 import { useProduct } from "@/api/hooks";
 import { useCart } from "@/app/CartProvider";
 import { Badge } from "@/design-system/components/Badge";
@@ -21,7 +22,7 @@ export function ProductDetailPage() {
     };
   }, []);
 
-  const cartItem = cart?.items.find((i) => i.productId === id);
+  const cartItem = cart?.items.find((i: CartItem) => i.productId === id);
 
   const handleAddToCart = async () => {
     if (!product || adding) return;

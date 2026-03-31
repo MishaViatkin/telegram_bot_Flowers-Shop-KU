@@ -1,4 +1,4 @@
-import { DELIVERY_WINDOW_LABELS, DELIVERY_WINDOWS } from "@flowers-tg/shared";
+import { DELIVERY_WINDOW_LABELS, DELIVERY_WINDOWS, type DeliveryWindow } from "@flowers-tg/shared";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "@/api/client";
@@ -134,14 +134,17 @@ export function CheckoutPage() {
     comment: "",
   });
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
-  const [selectedWindow, setSelectedWindow] = useState("asap");
+  const [selectedWindow, setSelectedWindow] = useState<DeliveryWindow>("asap");
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [orderComment, setOrderComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const days = getNext7Days();
-  const windows = DELIVERY_WINDOWS.map((w) => ({ value: w, label: DELIVERY_WINDOW_LABELS[w] }));
+  const windows = DELIVERY_WINDOWS.map((w: DeliveryWindow) => ({
+    value: w,
+    label: DELIVERY_WINDOW_LABELS[w],
+  }));
 
   const items = cart?.items ?? [];
 

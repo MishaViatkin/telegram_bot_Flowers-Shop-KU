@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import type { CartItem } from "@flowers-tg/shared";
 import { useCart } from "@/app/CartProvider";
 import { Button } from "@/design-system/components/Button";
 
@@ -104,7 +105,7 @@ export function CartPage() {
     );
   }
 
-  const items = cart?.items ?? [];
+  const items: CartItem[] = cart?.items ?? [];
 
   if (items.length === 0) {
     return (
@@ -157,7 +158,7 @@ export function CartPage() {
       </div>
 
       <div className="space-y-3 mb-5">
-        {items.map((item, i) => (
+        {items.map((item: CartItem, i: number) => (
           <div
             key={item.productId}
             className="flex gap-3 bg-white rounded-[var(--radius-card)] p-3 border border-transparent shadow-[var(--shadow-card)] transition-all duration-200 hover:border-[var(--border-brand-subtle)] hover:shadow-[var(--shadow-card-hover)] animate-fade-in"

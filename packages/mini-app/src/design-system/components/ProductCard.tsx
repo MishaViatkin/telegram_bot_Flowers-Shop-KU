@@ -1,4 +1,4 @@
-import type { Product } from "@flowers-tg/shared";
+import type { CartItem, Product } from "@flowers-tg/shared";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "@/app/CartProvider";
@@ -12,7 +12,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addItem, cart } = useCart();
   const [adding, setAdding] = useState(false);
 
-  const inCart = cart?.items.some((i) => i.productId === product.id) ?? false;
+  const inCart = cart?.items.some((i: CartItem) => i.productId === product.id) ?? false;
 
   const originalPrice = product.originalPrice ?? null;
   const hasDiscount = originalPrice !== null && originalPrice > product.price;

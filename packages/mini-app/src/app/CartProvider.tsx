@@ -1,4 +1,4 @@
-import type { Cart } from "@flowers-tg/shared";
+import type { Cart, CartItem } from "@flowers-tg/shared";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { apiClient } from "@/api/client";
 
@@ -54,7 +54,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+  const itemCount =
+    cart?.items.reduce<number>((sum: number, item: CartItem) => sum + item.quantity, 0) ?? 0;
 
   const refresh = useCallback(async () => {
     try {
