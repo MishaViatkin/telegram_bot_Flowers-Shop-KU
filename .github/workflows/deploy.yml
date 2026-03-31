@@ -33,13 +33,8 @@ jobs:
 
       - name: Create deploy package (no node_modules)
         run: |
-          tar \
-            --exclude='./.git' \
-            --exclude='./node_modules' \
-            --exclude='./packages/**/node_modules' \
-            --exclude='./**/.env' \
-            --exclude='./**/.env.*' \
-            -czf deploy.tgz .
+          # Use git archive to avoid "file changed as we read it" errors.
+          git archive --format=tar.gz -o deploy.tgz HEAD
 
       - name: Setup SSH key
         run: |
