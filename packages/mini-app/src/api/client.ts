@@ -3,6 +3,8 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 let _userId = `dev-${Date.now().toString(36)}`;
 let _initData = "";
 
+const DEFAULT_TIMEOUT_MS = 12_000;
+
 export function setUserId(id: string) {
   _userId = id;
 }
@@ -34,6 +36,10 @@ function parseErrorMessage(body: unknown, status: number): string {
 }
 
 export async function apiClient<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (!BASE_URL && import.meta.env.PROD) {
+    throw new Error("Не настроен VITE_API_BASE_URL (Netlify env).");
+  }
+
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };
@@ -48,10 +54,28 @@ export async function apiClient<T>(path: string, options: RequestInit = {}): Pro
     headers["X-User-Id"] = _userId;
   }
 
-  const response = await fetch(`${BASE_URL}/api${path}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutMs =
+    typeof (options as { timeoutMs?: unknown }).timeoutMs === "number"
+      ? ((options as { timeoutMs: number }).timeoutMs ?? DEFAULT_TIMEOUT_MS)
+      : DEFAULT_TIMEOUT_MS;
+
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let response: Response;
+  try {
+    response = await fetch(`${BASE_URL}/api${path}`, {
+      ...options,
+      headers,
+      signal: options.signal ?? controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Сервер не отвечает. Проверьте интернет и попробуйте ещё раз.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
