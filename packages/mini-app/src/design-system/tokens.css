@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #d64978;
+  --color-brand-primary-dark: #b83a63;
+  --color-brand-primary-light: #f2a0b8;
+  --color-brand-accent: #f7bb53;
+  --color-brand-accent-dark: #e5a63d;
+  --color-brand-base: #ffffff;
+  --color-brand-surface: #f8f9fa;
+  --color-brand-text: #1a1a1a;
+  --color-brand-text-secondary: #6b7280;
+  --color-brand-success: #16a34a;
+  --color-brand-error: #dc2626;
+  --color-brand-warning: #f59e0b;
+  --color-brand-info: #3b82f6;
+
+  --font-family-primary: "Montserrat", system-ui, sans-serif;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-nav: 0 -1px 12px rgba(0, 0, 0, 0.06);
+  --radius-card: 1rem;
+  --radius-hero: 1.5rem;
+  /* Согласовано с «глубокой» картой (elevation, как в shadcn-подобных лендингах) */
+  --border-brand-subtle: rgba(214, 73, 120, 0.14);
+}
+
+:root {
+  --tg-bg: var(--tg-theme-bg-color, var(--color-brand-base));
+  --tg-text: var(--tg-theme-text-color, var(--color-brand-text));
+  --tg-hint: var(--tg-theme-hint-color, var(--color-brand-text-secondary));
+  --tg-link: var(--tg-theme-link-color, var(--color-brand-primary));
+  --tg-button: var(--tg-theme-button-color, var(--color-brand-primary));
+  --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
+  --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #f3f4f6);
+  --tg-header-bg: var(--tg-theme-header-bg-color, var(--color-brand-primary));
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  /* Для «голого» CSS (не только @theme): */
+  --border-brand-subtle: rgba(214, 73, 120, 0.14);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family-primary);
+  background-color: var(--tg-bg);
+  color: var(--tg-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+input,
+textarea,
+select,
+button {
+  font-family: inherit;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.35s ease-out both;
+}
+
+/* Нижняя навигация: лёгкое «стекло» + бренд-граница (паттерн glass header) */
+.nav-bottom-glass {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-brand-subtle);
+  box-shadow: var(--shadow-nav);
+}
+
+.page-canvas {
+  background-color: var(--tg-bg);
+}

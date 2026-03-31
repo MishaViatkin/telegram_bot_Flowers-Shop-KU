@@ -1,0 +1,41 @@
+{
+  "name": "flowers-tg",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "valibot": "^1.2.0",
+      "esbuild": "^0.25.0"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:bot": "turbo run dev --filter=@flowers-tg/bot",
+    "dev:api": "turbo run dev --filter=@flowers-tg/api",
+    "dev:mini-app": "turbo run dev --filter=@flowers-tg/mini-app",
+    "build": "turbo run build",
+    "build:shared": "turbo run build --filter=@flowers-tg/shared",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "biome format .",
+    "format:write": "biome format --write .",
+    "check": "biome check .",
+    "check:write": "biome check --write .",
+    "clean": "turbo run clean",
+    "db:generate": "pnpm --filter @flowers-tg/api run db:generate",
+    "db:migrate": "pnpm --filter @flowers-tg/api run db:migrate",
+    "db:seed": "pnpm --filter @flowers-tg/api run db:seed"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.6",
+    "turbo": "^2.8.20"
+  }
+}

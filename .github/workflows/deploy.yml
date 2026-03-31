@@ -1,0 +1,74 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main, master]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (turbo)
+        run: pnpm exec turbo run build
+
+      - name: Create deploy package (no node_modules)
+        run: |
+          tar \
+            --exclude='./.git' \
+            --exclude='./node_modules' \
+            --exclude='./packages/**/node_modules' \
+            --exclude='./**/.env' \
+            --exclude='./**/.env.*' \
+            -czf deploy.tgz .
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          if [ -n "${{ secrets.DEPLOY_KNOWN_HOSTS }}" ]; then
+            echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+            chmod 600 ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Upload package to server
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
+          scp deploy.tgz "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/deploy.tgz"
+
+      - name: Extract and deploy (server)
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "set -euo pipefail; \
+            cd '${{ secrets.DEPLOY_PATH }}'; \
+            tar -xzf deploy.tgz; \
+            chmod +x scripts/deploy.sh; \
+            ./scripts/deploy.sh '${{ secrets.DEPLOY_PATH }}'"
+
+      - name: Smoke check (public)
+        run: |
+          curl -fsS "https://${{ secrets.DEPLOY_API_DOMAIN }}/health" >/dev/null
+          curl -fsS "https://${{ secrets.DEPLOY_BOT_DOMAIN }}/health" >/dev/null
+

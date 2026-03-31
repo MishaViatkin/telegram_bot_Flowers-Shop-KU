@@ -1,0 +1,32 @@
+{
+  "name": "@flowers-tg/mini-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@flowers-tg/shared": "workspace:*",
+    "@telegram-apps/sdk-react": "^3.3",
+    "@telegram-apps/sdk": "^3.11",
+    "react": "^18.3",
+    "react-dom": "^18.3",
+    "react-router-dom": "^6.28"
+  },
+  "devDependencies": {
+    "typescript": "^5.7",
+    "@types/react": "^18.3",
+    "@types/react-dom": "^18.3",
+    "@vitejs/plugin-react": "^4.3",
+    "vite": "^6.3",
+    "tailwindcss": "^4.1",
+    "@tailwindcss/vite": "^4.1"
+  }
+}

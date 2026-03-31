@@ -1,0 +1,42 @@
+---
+description: Telegram Mini App "Цветы Любимого Города" — monorepo overview and conventions
+alwaysApply: true
+---
+
+# Project: Цветы Любимого Города
+
+Telegram Mini App for a flower delivery service in Каменск-Уральский.
+
+## Stack
+- **Monorepo**: pnpm workspaces + Turborepo
+- **Backend** (`packages/api`): Fastify 5, Drizzle ORM, PostgreSQL 16, Redis 7
+- **Frontend** (`packages/mini-app`): React 18, Vite 6, Tailwind CSS 4, `@telegram-apps/sdk-react`
+- **Bot** (`packages/bot`): grammY ~1.39.3, Fastify (webhook + `/internal/notify`)
+- **Shared** (`packages/shared`): Zod schemas, TS types, constants
+
+## Brand & UI (design system)
+- Primary: `#D64978`, Accent: `#F7BB53`, Surface: `#F8F9FA`, Font: **Montserrat** (`index.html` + `tokens.css`)
+- Tokens: `packages/mini-app/src/design-system/tokens.css` — `@theme` (`brand-*`, `--shadow-card*`, `--border-brand-subtle`, `--radius-card`)
+- Patterns aligned with landing-style polish: **hero** with layered blur orbs + gold title accent; **cards** with hover border + elevation; **bottom nav** with `nav-bottom-glass` (blur + brand top border); **page** shell uses `page-canvas`
+- Russian-language UI; code comments in English
+
+## Auth (API)
+- Mini-app: `X-Init-Data` when Telegram provides signed `initData`; else `X-User-Id` (dev only outside production)
+- Bot → API: `INTERNAL_API_SECRET` + `X-User-Id` (`tg-<id>` only)
+- Catalog routes stay public; cart, orders, users require auth middleware
+
+## API shape
+- Success: `{ success: true, data: T }` — errors: `{ success: false, error: { code, message } }`
+
+## Roadmap (snapshot)
+- **Source of truth:** granular checklists in **`ROADMAP.md`** (micro-steps); handoff text in **`HANDOFF_FOR_NEW_CHAT.md`**
+- **M2**: checkout done; deploy → **M6** (`DEPLOY_TELEGRAM_CHECKLIST.md`)
+- **M3**: payments — **next focus** (YooKassa slice: schema → create payment → webhook → UI)
+- **M4**: growth — done
+- **M5**: triggers — todo after M3 stable
+- **M6**: admin panel done; Telegram deploy + prod secrets + optional RBAC
+- **M7**: rate limit + CI — done; admin stricter rate limit, lint CI, E2E, monitoring — todo
+
+## Conventions
+- Feature folders: `packages/mini-app/src/features/<feature>/`
+- Shared types/schemas: `packages/shared` only

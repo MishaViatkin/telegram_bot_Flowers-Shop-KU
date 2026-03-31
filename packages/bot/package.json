@@ -1,0 +1,28 @@
+{
+  "name": "@flowers-tg/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@flowers-tg/shared": "workspace:*",
+    "grammy": "~1.39.3",
+    "fastify": "^5.2",
+    "@fastify/cors": "^11.0",
+    "@fastify/helmet": "^13.0.1",
+    "dotenv": "^16.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.7",
+    "tsx": "^4.19",
+    "@types/node": "^22"
+  }
+}

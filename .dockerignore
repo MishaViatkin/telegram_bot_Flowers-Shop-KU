@@ -1,0 +1,12 @@
+node_modules
+.turbo
+.pnpm-store
+**/.DS_Store
+**/.env
+**/.env.*
+packages/*/dist
+packages/*/.vite
+packages/*/.cache
+npm-debug.log*
+pnpm-debug.log*
+coverage

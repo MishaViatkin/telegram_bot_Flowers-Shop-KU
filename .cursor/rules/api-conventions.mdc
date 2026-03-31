@@ -1,0 +1,21 @@
+---
+description: Fastify API route and DB conventions
+globs: packages/api/**/*.ts
+alwaysApply: false
+---
+
+# API Conventions
+
+- Routes organized by domain: `src/domains/<domain>/routes.ts`
+- DB schema in `src/infra/db/schema.ts` (Drizzle ORM, PostgreSQL)
+- **Auth** (`authMiddleware`): `X-Init-Data` (Telegram HMAC + `auth_date`) or internal `INTERNAL_API_SECRET` + `X-User-Id` (`tg-<digits>`), or in dev `X-User-Id` when allowed
+- **CORS**: set `CORS_ORIGIN` in production to comma-separated allowed origins; if unset, `origin: true` (dev only)
+- Validate request body/query with Zod schemas from `@flowers-tg/shared`
+- Return `{ success: true, data }` on success
+- Return `{ success: false, error: { code, message } }` on error with appropriate HTTP status
+- Use `reply.status(N).send(...)` for error responses
+- Promo codes: check applicability before applying
+- Order status transitions: validate against `ORDER_STATUS_FLOW` from shared
+- **`PATCH /orders/:id/status`**: disabled in production unless `ALLOW_USER_ORDER_STATUS_PATCH=true` (admin flow later)
+- Use `crypto.randomUUID()` for IDs (global crypto on Node ≥19)
+- `push.ts` uses raw SQL (not drizzle-kit) for schema creation

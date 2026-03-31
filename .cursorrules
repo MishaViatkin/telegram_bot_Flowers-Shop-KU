@@ -1,0 +1,48 @@
+## Project: Цветы Любимого Города (Telegram Mini App)
+
+### Stack
+- Node.js **>= 20**
+- pnpm (workspace) + Turborepo
+- **API**: Fastify 5 (`packages/api`)
+- **Bot**: grammY + Fastify (webhook server) (`packages/bot`)
+- **Mini App**: React + Vite + Tailwind (`packages/mini-app`)
+- Postgres + Redis (via Docker Compose)
+
+### Preferred deployment (production)
+- VPS (Ubuntu) + Docker Compose: `docker-compose.prod.yml`
+- Nginx reverse-proxy + Certbot (Let’s Encrypt)
+- Static mini-app served from: `packages/mini-app/dist`
+
+### Health checks
+- API: `GET /health`
+- Bot: `GET /health`
+
+### Runbook
+
+#### Local development
+```bash
+pnpm install
+pnpm --filter @flowers-tg/api db:push
+pnpm dev
+```
+
+#### CI build (artifact, no node_modules)
+```bash
+pnpm install --frozen-lockfile
+pnpm exec turbo run build
+```
+
+#### Server one-time setup
+- Follow `DEPLOY_VPS_DOCKER.md`
+- Ensure `.env.api` and `.env.bot` exist in deploy directory (never commit them)
+
+#### Server deploy (manual)
+From deploy directory (e.g. `/opt/flowers-tg/current`):
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec api pnpm --filter @flowers-tg/api db:push
+docker compose -f docker-compose.prod.yml ps
+curl -fsS http://127.0.0.1:3000/health
+curl -fsS http://127.0.0.1:3001/health
+```
+

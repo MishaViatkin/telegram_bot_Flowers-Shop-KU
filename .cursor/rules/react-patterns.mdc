@@ -1,0 +1,20 @@
+---
+description: React component and hook patterns for the mini-app
+globs: packages/mini-app/**/*.tsx
+alwaysApply: false
+---
+
+# React Patterns
+
+- Functional components only, named exports
+- Path alias: `@/` maps to `src/`
+- Design system components live in `src/design-system/components/`
+- Use `useCart()` from `@/app/CartProvider` for cart mutations
+- Use `useTelegram()` from `@/app/TelegramProvider` for Telegram WebApp API
+- All loading states use skeleton shimmer (`animate-pulse`), not spinners
+- Empty states use centered layout with icon + message + CTA button
+- Error states show `bg-red-50 text-brand-error rounded-2xl` banners
+- Add `aria-label` to icon-only buttons
+- Use `scrollbar-hide` class for horizontal scroll containers
+- Shell: root layout uses `page-canvas`; bottom nav uses `nav-bottom-glass` (see `tokens.css`)
+- Tailwind v4: colors via `@theme` in `tokens.css`, no `tailwind.config.*` file
