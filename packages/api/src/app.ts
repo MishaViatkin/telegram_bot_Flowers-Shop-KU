@@ -106,6 +106,14 @@ export async function buildApp() {
 
   app.get("/health", async () => ({ status: "ok" }));
 
+  if (!isProd) {
+    app.get("/debug/env", async () => ({
+      nodeEnv: process.env.NODE_ENV ?? null,
+      hasInternalSecret: Boolean(process.env.INTERNAL_API_SECRET?.trim()),
+      allowDevUserIdAuth: process.env.ALLOW_DEV_USER_ID_AUTH === "true",
+    }));
+  }
+
   await app.register(yookassaWebhookRoutes, { prefix: "/api" });
 
   app.register(

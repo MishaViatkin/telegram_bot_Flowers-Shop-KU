@@ -171,175 +171,247 @@ export function OrderStatusPage() {
   };
 
   return (
-    <div className="px-4 pt-5 pb-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-xl font-bold">Заказ</h1>
-        <span className="text-[11px] text-[var(--tg-hint)] font-mono">#{order.id.slice(0, 8)}</span>
-      </div>
-      <p className="text-xs text-[var(--tg-hint)] mb-5">
-        {new Date(order.createdAt).toLocaleString("ru-RU", {
-          day: "numeric",
-          month: "long",
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </p>
-
-      {/* Status */}
-      <div className={`flex items-center gap-4 p-4 rounded-2xl mb-6 ${config.color}`}>
-        <div className="w-12 h-12 rounded-xl bg-white/60 flex items-center justify-center shrink-0">
-          <Badge variant={config.variant} size="md">
-            {statusLabel}
-          </Badge>
+    <div className="animate-fade-in">
+      {/* Hero header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-primary via-brand-primary-dark to-[#7a2340] px-5 pt-7 pb-7">
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div className="absolute -top-24 left-1/2 h-48 w-[min(100%,26rem)] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute top-10 right-0 h-36 w-36 rounded-full bg-brand-accent/25 blur-2xl" />
+          <div className="absolute bottom-0 left-4 h-28 w-28 rounded-full bg-white/10 blur-xl" />
         </div>
-        <div>
-          <p className="text-sm font-semibold mb-0.5">{statusLabel}</p>
-          {description && <p className="text-xs text-[var(--tg-hint)]">{description}</p>}
-        </div>
-      </div>
-
-      {order.status === "created" && order.paymentMethod === "card_online" && (
-        <div className="mb-6 space-y-2">
-          <p className="text-sm text-[var(--tg-hint)]">
-            Оплатите заказ картой — после оплаты статус обновится автоматически.
-          </p>
-          {payError && <p className="text-sm text-brand-error">{payError}</p>}
-          <Button variant="primary" size="lg" onClick={handlePayOnline} loading={payLoading}>
-            Перейти к оплате
-          </Button>
-        </div>
-      )}
-
-      {/* Items */}
-      <section className="mb-6">
-        <h2 className="text-sm font-semibold mb-3">Состав заказа</h2>
-        <div className="space-y-2">
-          {order.items.map((item) => (
-            <div
-              key={item.productId}
-              className="flex gap-3 bg-white rounded-2xl p-3 shadow-[var(--shadow-card)]"
-            >
-              <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden shrink-0">
-                {item.image ? (
-                  <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pink-50 to-pink-100">
-                    <svg
-                      className="w-5 h-5 text-brand-primary/30"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 22c-.55 0-1-.45-1-1v-3.27c-3.58-.45-6.37-3.24-6.82-6.82L1 11c-.55 0-1-.45-1-1s.45-1 1-1h3.09C4.54 5.58 7.33 2.79 10.91 2.34V1c0-.55.45-1 1-1s1 .45 1 1v1.09c3.58.45 6.37 3.24 6.82 6.82L23 9c.55 0 1 .45 1 1s-.45 1-1 1h-3.27c-.45 3.58-3.24 6.37-6.82 6.82V21c0 .55-.45 1-.91 1z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium line-clamp-1">{item.title}</p>
-                <p className="text-xs text-[var(--tg-hint)]">
-                  {item.quantity} × {item.price.toLocaleString("ru-RU")} ₽
-                </p>
-              </div>
-              <span className="text-sm font-semibold shrink-0 self-center">
-                {(item.price * item.quantity).toLocaleString("ru-RU")} ₽
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Delivery */}
-      <section className="mb-6">
-        <h2 className="text-sm font-semibold mb-3">Доставка</h2>
-        <div className="bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] space-y-2.5 text-sm">
-          <InfoRow label="Получатель" value={order.recipient.name} />
-          <InfoRow label="Телефон" value={order.recipient.phone} />
-          <InfoRow
-            label="Адрес"
-            value={`${order.address.street}, ${order.address.building}${order.address.apartment ? `, кв. ${order.address.apartment}` : ""}`}
-          />
-          <InfoRow
-            label="Время"
-            value={`${new Date(order.deliverySlot.date).toLocaleDateString("ru-RU")}, ${getWindowLabel(order.deliverySlot.window)}`}
-          />
-          <InfoRow
-            label="Оплата"
-            value={PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}
-          />
-        </div>
-      </section>
-
-      {/* Total */}
-      <section className="mb-6">
-        <div className="bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-[var(--tg-hint)]">Товары</span>
-            <span className="font-medium">{order.subtotal.toLocaleString("ru-RU")} ₽</span>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-[1.25rem] font-bold text-white mb-1 tracking-tight leading-snug">
+              Заказ
+            </h1>
+            <p className="text-white/75 text-[13px] leading-relaxed">
+              #{order.id.slice(0, 8)} ·{" "}
+              {new Date(order.createdAt).toLocaleString("ru-RU", {
+                day: "numeric",
+                month: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
           </div>
-          {order.discount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-brand-success font-medium">Скидка</span>
-              <span className="text-brand-success font-medium">
-                -{order.discount.toLocaleString("ru-RU")} ₽
-              </span>
-            </div>
-          )}
-          {order.deliveryFee > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--tg-hint)]">Доставка</span>
-              <span className="font-medium">{order.deliveryFee.toLocaleString("ru-RU")} ₽</span>
-            </div>
-          )}
-          <div className="border-t border-gray-100 pt-3 mt-1">
-            <div className="flex justify-between items-baseline">
-              <span className="font-semibold">Итого</span>
-              <span className="text-lg font-bold text-brand-primary">
-                {order.total.toLocaleString("ru-RU")} ₽
-              </span>
-            </div>
+          <div className="shrink-0">
+            <Badge variant={config.variant} size="md">
+              {statusLabel}
+            </Badge>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Timeline */}
-      {timeline.length > 0 && (
-        <section className="mb-6">
-          <h2 className="text-sm font-semibold mb-3">История</h2>
-          <div className="relative pl-7">
-            <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full" />
-            {timeline.map((entry, i) => (
-              <div key={`${entry.createdAt}-${entry.status}`} className="relative mb-5 last:mb-0">
-                <div
-                  className={`absolute -left-5 top-0.5 w-[14px] h-[14px] rounded-full border-2 ${
-                    i === 0 ? "bg-brand-primary border-brand-primary" : "bg-white border-gray-300"
-                  }`}
+      <div className="px-4 pt-5 pb-6 -mt-4">
+        {/* Status card */}
+        <div
+          className={`rounded-[var(--radius-hero)] p-4 mb-6 border border-white/60 shadow-[var(--shadow-float)] ${config.color}`}
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/70 flex items-center justify-center shrink-0">
+              <svg
+                className="w-5 h-5 text-brand-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={1.8}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.5 9.75 12 14.25l-2.25-2.25M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                 />
-                <div>
-                  <span className="text-sm font-medium">
-                    {ORDER_STATUS_LABELS[entry.status as OrderStatus] ?? entry.status}
-                  </span>
-                  {entry.note && (
-                    <p className="text-xs text-[var(--tg-hint)] mt-0.5">{entry.note}</p>
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold mb-0.5">{statusLabel}</p>
+              {description && <p className="text-xs text-[var(--tg-hint)]">{description}</p>}
+            </div>
+          </div>
+        </div>
+
+        {order.status === "created" && order.paymentMethod === "card_online" && (
+          <div className="mb-6">
+            <div className="bg-white rounded-[var(--radius-card)] p-4 border border-[var(--border-brand-subtle)]/40 shadow-[var(--shadow-card)]">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-brand-primary/8 flex items-center justify-center shrink-0 text-brand-primary">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.8}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 8.25h16.5M4.5 6.75h15A2.25 2.25 0 0 1 21.75 9v9A2.25 2.25 0 0 1 19.5 20.25h-15A2.25 2.25 0 0 1 2.25 18V9A2.25 2.25 0 0 1 4.5 6.75Z"
+                    />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">Нужна оплата</p>
+                  <p className="text-[12px] text-[var(--tg-hint)] mt-1 leading-snug">
+                    Оплатите заказ картой в YooKassa — после оплаты статус обновится автоматически.
+                  </p>
+                  {payError && (
+                    <p className="text-[12px] text-brand-error mt-2 font-medium">{payError}</p>
                   )}
-                  <p className="text-[11px] text-[var(--tg-hint)] mt-0.5">
-                    {new Date(entry.createdAt).toLocaleString("ru-RU", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  <div className="mt-3">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={handlePayOnline}
+                      loading={payLoading}
+                    >
+                      Перейти к оплате
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Items */}
+        <section className="mb-6">
+          <h2 className="text-sm font-semibold mb-3">Состав заказа</h2>
+          <div className="space-y-2">
+            {order.items.map((item) => (
+              <div
+                key={item.productId}
+                className="flex gap-3 bg-white rounded-2xl p-3 shadow-[var(--shadow-card)] border border-transparent hover:border-[var(--border-brand-subtle)]/40 transition-colors"
+              >
+                <div className="w-14 h-14 rounded-xl bg-gray-50 overflow-hidden shrink-0">
+                  {item.image ? (
+                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pink-50 to-pink-100">
+                      <svg
+                        className="w-5 h-5 text-brand-primary/30"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 22c-.55 0-1-.45-1-1v-3.27c-3.58-.45-6.37-3.24-6.82-6.82L1 11c-.55 0-1-.45-1-1s.45-1 1-1h3.09C4.54 5.58 7.33 2.79 10.91 2.34V1c0-.55.45-1 1-1s1 .45 1 1v1.09c3.58.45 6.37 3.24 6.82 6.82L23 9c.55 0 1 .45 1 1s-.45 1-1 1h-3.27c-.45 3.58-3.24 6.37-6.82 6.82V21c0 .55-.45 1-.91 1z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium line-clamp-1">{item.title}</p>
+                  <p className="text-xs text-[var(--tg-hint)]">
+                    {item.quantity} × {item.price.toLocaleString("ru-RU")} ₽
                   </p>
                 </div>
+                <span className="text-sm font-semibold shrink-0 self-center">
+                  {(item.price * item.quantity).toLocaleString("ru-RU")} ₽
+                </span>
               </div>
             ))}
           </div>
         </section>
-      )}
 
-      <Button variant="outline" size="lg" onClick={() => navigate("/")}>
-        Продолжить покупки
-      </Button>
+        {/* Delivery */}
+        <section className="mb-6">
+          <h2 className="text-sm font-semibold mb-3">Доставка</h2>
+          <div className="bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] space-y-2.5 text-sm">
+            <InfoRow label="Получатель" value={order.recipient.name} />
+            <InfoRow label="Телефон" value={order.recipient.phone} />
+            <InfoRow
+              label="Адрес"
+              value={`${order.address.street}, ${order.address.building}${order.address.apartment ? `, кв. ${order.address.apartment}` : ""}`}
+            />
+            <InfoRow
+              label="Время"
+              value={`${new Date(order.deliverySlot.date).toLocaleDateString("ru-RU")}, ${getWindowLabel(order.deliverySlot.window)}`}
+            />
+            <InfoRow
+              label="Оплата"
+              value={PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}
+            />
+          </div>
+        </section>
+
+        {/* Total */}
+        <section className="mb-6">
+          <div className="bg-white rounded-2xl p-4 shadow-[var(--shadow-card)] space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-[var(--tg-hint)]">Товары</span>
+              <span className="font-medium">{order.subtotal.toLocaleString("ru-RU")} ₽</span>
+            </div>
+            {order.discount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-success font-medium">Скидка</span>
+                <span className="text-brand-success font-medium">
+                  -{order.discount.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+            )}
+            {order.deliveryFee > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--tg-hint)]">Доставка</span>
+                <span className="font-medium">{order.deliveryFee.toLocaleString("ru-RU")} ₽</span>
+              </div>
+            )}
+            <div className="border-t border-gray-100 pt-3 mt-1">
+              <div className="flex justify-between items-baseline">
+                <span className="font-semibold">Итого</span>
+                <span className="text-lg font-bold text-brand-primary">
+                  {order.total.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Timeline */}
+        {timeline.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-sm font-semibold mb-3">История</h2>
+            <div className="bg-white rounded-[var(--radius-card)] p-4 shadow-[var(--shadow-card)]">
+              <div className="relative pl-7">
+                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-gray-200 rounded-full" />
+                {timeline.map((entry, i) => (
+                  <div
+                    key={`${entry.createdAt}-${entry.status}`}
+                    className="relative mb-5 last:mb-0"
+                  >
+                    <div
+                      className={`absolute -left-5 top-1 w-[14px] h-[14px] rounded-full border-2 ${
+                        i === 0
+                          ? "bg-brand-primary border-brand-primary"
+                          : "bg-white border-gray-300"
+                      }`}
+                    />
+                    <div>
+                      <span className="text-sm font-semibold">
+                        {ORDER_STATUS_LABELS[entry.status as OrderStatus] ?? entry.status}
+                      </span>
+                      {entry.note && (
+                        <p className="text-xs text-[var(--tg-hint)] mt-0.5 leading-relaxed">
+                          {entry.note}
+                        </p>
+                      )}
+                      <p className="text-[11px] text-[var(--tg-hint)] mt-0.5">
+                        {new Date(entry.createdAt).toLocaleString("ru-RU", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        <Button variant="outline" size="lg" onClick={() => navigate("/")}>
+          Продолжить покупки
+        </Button>
+      </div>
     </div>
   );
 }

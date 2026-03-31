@@ -20,6 +20,7 @@
     "dev:bot": "turbo run dev --filter=@flowers-tg/bot",
     "dev:api": "turbo run dev --filter=@flowers-tg/api",
     "dev:mini-app": "turbo run dev --filter=@flowers-tg/mini-app",
+    "test:e2e": "turbo run test:e2e --filter=@flowers-tg/e2e",
     "build": "turbo run build",
     "build:shared": "turbo run build --filter=@flowers-tg/shared",
     "typecheck": "turbo run typecheck",
@@ -36,6 +37,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6",
-    "turbo": "^2.8.20"
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^22.19.15",
+    "turbo": "^2.8.20",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   }
 }

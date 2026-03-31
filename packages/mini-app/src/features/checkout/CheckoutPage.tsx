@@ -8,7 +8,7 @@ import { Button } from "@/design-system/components/Button";
 const PAYMENT_METHODS = [
   { id: "cash", label: "Наличными курьеру", icon: "cash" },
   { id: "transfer", label: "Перевод на карту", icon: "card" },
-  { id: "card_online", label: "Онлайн оплата", icon: "online" },
+  { id: "card_online", label: "Онлайн-оплата", icon: "online" },
 ] as const;
 
 const PaymentIcon = ({ type }: { type: string }) => {
@@ -281,158 +281,249 @@ export function CheckoutPage() {
   );
 
   return (
-    <div className="px-4 pt-5 pb-6 animate-fade-in">
-      <h1 className="text-xl font-bold mb-6">Оформление заказа</h1>
-
-      {/* Recipient */}
-      <section className="mb-6">
-        <SectionHeader step={1} title="Получатель" />
-        <div className="space-y-3">
-          {RECIPIENT_FIELDS.map((f) =>
-            renderField(
-              f,
-              recipient,
-              setRecipient as Dispatch<SetStateAction<Record<string, string>>>,
-            ),
-          )}
+    <div className="animate-fade-in">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-primary via-brand-primary-dark to-[#7a2340] px-5 pt-7 pb-7">
+        <div className="pointer-events-none absolute inset-0" aria-hidden>
+          <div className="absolute -top-24 left-1/2 h-48 w-[min(100%,26rem)] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute top-10 right-0 h-36 w-36 rounded-full bg-brand-accent/25 blur-2xl" />
+          <div className="absolute bottom-0 left-4 h-28 w-28 rounded-full bg-white/10 blur-xl" />
         </div>
-      </section>
+        <h1 className="text-[1.25rem] font-bold text-white mb-1 tracking-tight leading-snug">
+          Оформление заказа
+        </h1>
+        <p className="text-white/75 text-[13px] leading-relaxed">
+          Проверьте адрес и выберите способ оплаты
+        </p>
+      </div>
 
-      {/* Address */}
-      <section className="mb-6">
-        <SectionHeader step={2} title="Адрес доставки" />
-        <div className="flex flex-wrap gap-3">
-          {ADDRESS_FIELDS.map((f) =>
-            renderField(f, address, setAddress as Dispatch<SetStateAction<Record<string, string>>>),
-          )}
-        </div>
-      </section>
-
-      {/* Delivery slot */}
-      <section className="mb-6">
-        <SectionHeader step={3} title="Время доставки" />
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide mb-3">
-          {days.map((d) => (
-            <button
-              key={d.date}
-              className={`shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
-                selectedDate === d.date
-                  ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
-                  : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
-              }`}
-              onClick={() => setSelectedDate(d.date)}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {windows.map((w) => (
-            <button
-              key={w.value}
-              className={`px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 ${
-                selectedWindow === w.value
-                  ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
-                  : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
-              }`}
-              onClick={() => setSelectedWindow(w.value)}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Payment */}
-      <section className="mb-6">
-        <SectionHeader step={4} title="Способ оплаты" />
-        <div className="space-y-2">
-          {PAYMENT_METHODS.map((m) => (
-            <button
-              key={m.id}
-              className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 ${
-                paymentMethod === m.id
-                  ? "bg-brand-primary/8 border-2 border-brand-primary"
-                  : "bg-[var(--tg-secondary-bg)] border-2 border-transparent hover:bg-gray-200"
-              }`}
-              onClick={() => setPaymentMethod(m.id)}
-            >
-              <div className={`${paymentMethod === m.id ? "text-brand-primary" : "text-gray-500"}`}>
-                <PaymentIcon type={m.icon} />
-              </div>
-              <span className="text-sm font-medium flex-1 text-left">{m.label}</span>
-              {paymentMethod === m.id && (
-                <svg
-                  className="w-5 h-5 text-brand-primary shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Comment */}
-      <section className="mb-6">
-        <label className="block text-xs text-[var(--tg-hint)] mb-1.5 ml-0.5 font-medium">
-          Комментарий к заказу
-        </label>
-        <textarea
-          placeholder="Пожелания по букету, открытка..."
-          value={orderComment}
-          onChange={(e) => setOrderComment(e.target.value)}
-          rows={2}
-          className="w-full px-4 py-3 bg-[var(--tg-secondary-bg)] rounded-2xl text-sm outline-none focus:ring-2 focus:ring-brand-primary/20 transition-shadow resize-none placeholder:text-gray-400"
-        />
-      </section>
-
-      {/* Summary */}
-      <div className="bg-white rounded-2xl p-4 mb-5 shadow-[var(--shadow-card)]">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-[var(--tg-hint)]">Товары</span>
-            <span className="font-medium">{cart?.subtotal?.toLocaleString("ru-RU")} ₽</span>
-          </div>
-          {(cart?.discount ?? 0) > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-brand-success font-medium">Скидка</span>
-              <span className="text-brand-success font-medium">
-                -{(cart?.discount ?? 0).toLocaleString("ru-RU")} ₽
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between text-sm">
-            <span className="text-[var(--tg-hint)]">Доставка</span>
-            <span className="text-brand-success font-medium">Бесплатно</span>
-          </div>
-          <div className="border-t border-gray-100 pt-3 mt-1">
-            <div className="flex justify-between items-baseline">
-              <span className="font-semibold">К оплате</span>
-              <span className="text-xl font-bold text-brand-primary">
+      <div className="px-4 pt-5 pb-6 -mt-4">
+        <div className="bg-white rounded-[var(--radius-hero)] shadow-[var(--shadow-float)] border border-white/30 p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-[var(--tg-hint)]">К оплате</p>
+              <p className="text-[22px] font-extrabold text-brand-primary leading-none mt-1">
                 {cart?.total?.toLocaleString("ru-RU")} ₽
-              </span>
+              </p>
             </div>
+            <div className="text-right">
+              <p className="text-xs text-[var(--tg-hint)]">Товары</p>
+              <p className="text-sm font-semibold">{items.length} шт.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Recipient */}
+        <section className="mb-6">
+          <SectionHeader step={1} title="Получатель" />
+          <div className="space-y-3">
+            {RECIPIENT_FIELDS.map((f) =>
+              renderField(
+                f,
+                recipient,
+                setRecipient as Dispatch<SetStateAction<Record<string, string>>>,
+              ),
+            )}
+          </div>
+        </section>
+
+        {/* Address */}
+        <section className="mb-6">
+          <SectionHeader step={2} title="Адрес доставки" />
+          <div className="flex flex-wrap gap-3">
+            {ADDRESS_FIELDS.map((f) =>
+              renderField(
+                f,
+                address,
+                setAddress as Dispatch<SetStateAction<Record<string, string>>>,
+              ),
+            )}
+          </div>
+        </section>
+
+        {/* Delivery slot */}
+        <section className="mb-6">
+          <SectionHeader step={3} title="Время доставки" />
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide mb-3">
+            {days.map((d) => (
+              <button
+                key={d.date}
+                className={`shrink-0 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                  selectedDate === d.date
+                    ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
+                    : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
+                }`}
+                onClick={() => setSelectedDate(d.date)}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {windows.map((w) => (
+              <button
+                key={w.value}
+                className={`px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 ${
+                  selectedWindow === w.value
+                    ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
+                    : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
+                }`}
+                onClick={() => setSelectedWindow(w.value)}
+              >
+                {w.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Payment */}
+        <section className="mb-6">
+          <SectionHeader step={4} title="Способ оплаты" />
+          <div className="space-y-2">
+            {PAYMENT_METHODS.map((m) => {
+              const isSelected = paymentMethod === m.id;
+              const isRecommended = m.id === "card_online";
+              return (
+                <button
+                  key={m.id}
+                  className={`w-full flex items-start gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 ${
+                    isSelected
+                      ? "bg-white border-2 border-brand-primary shadow-[var(--shadow-card-hover)]"
+                      : "bg-[var(--tg-secondary-bg)] border-2 border-transparent hover:bg-gray-200"
+                  }`}
+                  onClick={() => setPaymentMethod(m.id)}
+                >
+                  <div className={`mt-0.5 ${isSelected ? "text-brand-primary" : "text-gray-500"}`}>
+                    <PaymentIcon type={m.icon} />
+                  </div>
+
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{m.label}</span>
+                      {isRecommended && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-accent text-brand-text shadow-sm">
+                          рекомендуем
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-[var(--tg-hint)] mt-1 leading-snug">
+                      {m.id === "card_online"
+                        ? "Оплатите на странице YooKassa — после оплаты статус обновится автоматически."
+                        : m.id === "cash"
+                          ? "Оплата наличными при получении."
+                          : "Перевод по реквизитам — уточним в сообщении после подтверждения."}
+                    </p>
+                  </div>
+
+                  <div className="mt-0.5 shrink-0">
+                    {isSelected ? (
+                      <svg
+                        className="w-5 h-5 text-brand-primary"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-300" aria-hidden />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Comment */}
+        <section className="mb-6">
+          <label className="block text-xs text-[var(--tg-hint)] mb-1.5 ml-0.5 font-medium">
+            Комментарий к заказу
+          </label>
+          <textarea
+            placeholder="Пожелания по букету, открытка..."
+            value={orderComment}
+            onChange={(e) => setOrderComment(e.target.value)}
+            rows={2}
+            className="w-full px-4 py-3 bg-[var(--tg-secondary-bg)] rounded-2xl text-sm outline-none focus:ring-2 focus:ring-brand-primary/20 transition-shadow resize-none placeholder:text-gray-400"
+          />
+        </section>
+
+        {/* Summary */}
+        <div className="bg-white rounded-[var(--radius-card)] p-4 mb-5 border border-[var(--border-brand-subtle)]/40 shadow-[var(--shadow-float)]">
+          <div className="space-y-2.5">
+            <div className="flex justify-between text-sm">
+              <span className="text-[var(--tg-hint)]">Товары</span>
+              <span className="font-medium">{cart?.subtotal?.toLocaleString("ru-RU")} ₽</span>
+            </div>
+            {(cart?.discount ?? 0) > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-success font-medium">Скидка</span>
+                <span className="text-brand-success font-medium">
+                  -{(cart?.discount ?? 0).toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-[var(--tg-hint)]">Доставка</span>
+              <span className="text-brand-success font-medium">Бесплатно</span>
+            </div>
+            <div className="border-t border-gray-100 pt-3 mt-1">
+              <div className="flex justify-between items-baseline">
+                <span className="font-semibold">К оплате</span>
+                <span className="text-xl font-bold text-brand-primary">
+                  {cart?.total?.toLocaleString("ru-RU")} ₽
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-brand-error text-sm px-4 py-3 rounded-2xl mb-4 font-medium animate-fade-in">
+            {error}
+          </div>
+        )}
+
+        {/* Spacer for sticky CTA */}
+        <div className="h-[88px]" />
+      </div>
+
+      {/* Sticky CTA */}
+      <div
+        className="fixed left-0 right-0 bottom-[64px] z-40 px-4"
+        style={{ paddingBottom: "var(--safe-area-bottom)" }}
+      >
+        <div className="max-w-md mx-auto">
+          <div className="nav-bottom-glass bg-[var(--tg-bg)]/92 rounded-[var(--radius-hero)] border border-[var(--border-brand-subtle)] px-3.5 py-3 shadow-[var(--shadow-float)]">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] text-[var(--tg-hint)] leading-none">К оплате</p>
+                <p className="text-[15px] font-extrabold text-brand-primary leading-tight">
+                  {cart?.total?.toLocaleString("ru-RU")} ₽
+                </p>
+              </div>
+              <Button
+                variant="primary"
+                size="lg"
+                className="flex-1"
+                onClick={handleSubmit}
+                loading={submitting}
+              >
+                Подтвердить заказ
+              </Button>
+            </div>
+            {paymentMethod === "card_online" && (
+              <p className="text-[11px] text-[var(--tg-hint)] mt-2 leading-snug">
+                После подтверждения откроется YooKassa. Вернёмся обратно и покажем статус заказа.
+              </p>
+            )}
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="bg-red-50 text-brand-error text-sm px-4 py-3 rounded-2xl mb-4 font-medium animate-fade-in">
-          {error}
-        </div>
-      )}
-
-      <Button variant="primary" size="lg" onClick={handleSubmit} loading={submitting}>
-        Подтвердить заказ
-      </Button>
     </div>
   );
 }

@@ -36,9 +36,28 @@ export function AppShell() {
 
   if (!isReady) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
-        <div className="w-10 h-10 border-3 border-brand-primary/30 border-t-brand-primary rounded-full animate-spin" />
-        <span className="text-brand-primary text-sm font-medium animate-pulse">Загрузка...</span>
+      <div className="min-h-screen px-4 pt-6 pb-6">
+        <div className="max-w-md mx-auto space-y-4 animate-pulse">
+          <div className="h-10 rounded-2xl bg-gray-100 w-2/3" />
+          <div className="h-14 rounded-2xl bg-gray-100" />
+          <div className="grid grid-cols-2 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                // eslint-disable-next-line react/no-array-index-key
+                key={i}
+                className="rounded-2xl overflow-hidden bg-white shadow-[var(--shadow-card)]"
+              >
+                <div className="aspect-[4/5] bg-gray-100" />
+                <div className="p-3 space-y-2.5">
+                  <div className="h-3.5 bg-gray-100 rounded-lg w-4/5" />
+                  <div className="h-3.5 bg-gray-100 rounded-lg w-3/5" />
+                  <div className="h-5 bg-gray-100 rounded-lg w-2/5" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="h-10 rounded-2xl bg-gray-100" />
+        </div>
       </div>
     );
   }

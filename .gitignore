@@ -14,6 +14,8 @@ dist-node/
 .vite/
 *.tsbuildinfo
 package-lock.json
+.pnpm-store/
+packages/e2e/.playwright-browsers/
 
 # SSH keys / certs
 *.pem
