@@ -1,6 +1,6 @@
+import type { CartItem } from "@flowers-tg/shared";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CartItem } from "@flowers-tg/shared";
 import { useCart } from "@/app/CartProvider";
 import { Button } from "@/design-system/components/Button";
 

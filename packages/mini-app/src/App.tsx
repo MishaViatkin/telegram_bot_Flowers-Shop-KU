@@ -4,8 +4,12 @@ import { AppShell } from "@/app/AppShell";
 import { CartProvider } from "@/app/CartProvider";
 import { TelegramProvider } from "@/app/TelegramProvider";
 
-const AdminApp = lazy(() => import("@/features/admin/AdminApp").then((m) => ({ default: m.AdminApp })));
-const CartPage = lazy(() => import("@/features/cart/CartPage").then((m) => ({ default: m.CartPage })));
+const AdminApp = lazy(() =>
+  import("@/features/admin/AdminApp").then((m) => ({ default: m.AdminApp })),
+);
+const CartPage = lazy(() =>
+  import("@/features/cart/CartPage").then((m) => ({ default: m.CartPage })),
+);
 const CatalogPage = lazy(() =>
   import("@/features/catalog/CatalogPage").then((m) => ({ default: m.CatalogPage })),
 );
