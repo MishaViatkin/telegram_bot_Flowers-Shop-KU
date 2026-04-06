@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ADMIN_SECRET_CHANGED_EVENT, getAdminSecret } from "@/api/admin-client";
 import { useReferralAttribution } from "@/hooks/useReferralAttribution";
 import { useCart } from "./CartProvider";
 import { deepLinkToPath, parseStartParam } from "./deep-link";
@@ -11,6 +12,18 @@ export function AppShell() {
   const { itemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+  const [hasAdmin, setHasAdmin] = useState(() => getAdminSecret() != null);
+
+  useEffect(() => {
+    const sync = () => setHasAdmin(getAdminSecret() != null);
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener(ADMIN_SECRET_CHANGED_EVENT, sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(ADMIN_SECRET_CHANGED_EVENT, sync);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isReady) return;
@@ -85,7 +98,8 @@ export function AppShell() {
               !isActive("/cart") &&
               !isActive("/orders") &&
               !isActive("/order/") &&
-              !isActive("/checkout")
+              !isActive("/checkout") &&
+              !isActive("/admin")
             }
             icon={
               <svg
@@ -146,6 +160,29 @@ export function AppShell() {
               </svg>
             }
           />
+
+          {hasAdmin && (
+            <NavItem
+              to="/admin"
+              label="Админ"
+              active={isActive("/admin")}
+              icon={
+                <svg
+                  className="w-[22px] h-[22px]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3a3 3 0 0 0-3 3v1H7.5A2.25 2.25 0 0 0 5.25 9.25v9.5A2.25 2.25 0 0 0 7.5 21h9A2.25 2.25 0 0 0 18.75 18.75v-9.5A2.25 2.25 0 0 0 16.5 7H15V6a3 3 0 0 0-3-3Zm-1.5 4V6a1.5 1.5 0 0 1 3 0v1h-3Z"
+                  />
+                </svg>
+              }
+            />
+          )}
         </div>
       </nav>
     </div>

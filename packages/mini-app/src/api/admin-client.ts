@@ -2,6 +2,8 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 const STORAGE_KEY = "flowers_admin_secret";
 
+export const ADMIN_SECRET_CHANGED_EVENT = "flowers-tg:admin-secret-changed";
+
 export function getAdminSecret(): string | null {
   try {
     return sessionStorage.getItem(STORAGE_KEY);
@@ -16,11 +18,21 @@ export function setAdminSecret(secret: string) {
   } catch {
     /* ignore */
   }
+  try {
+    window.dispatchEvent(new Event(ADMIN_SECRET_CHANGED_EVENT));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function clearAdminSecret() {
   try {
     sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.dispatchEvent(new Event(ADMIN_SECRET_CHANGED_EVENT));
   } catch {
     /* ignore */
   }

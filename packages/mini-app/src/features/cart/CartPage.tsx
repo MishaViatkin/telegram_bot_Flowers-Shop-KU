@@ -7,16 +7,23 @@ import { Button } from "@/design-system/components/Button";
 function QuantityControl({
   quantity,
   onChange,
+  disabled,
 }: {
   quantity: number;
   onChange: (q: number) => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center bg-[var(--tg-secondary-bg)] rounded-xl overflow-hidden">
+    <div
+      className={`flex items-center bg-[var(--tg-secondary-bg)] rounded-xl overflow-hidden ${
+        disabled ? "opacity-60" : ""
+      }`}
+    >
       <button
         className="w-9 h-9 flex items-center justify-center text-base font-medium text-[var(--tg-text)] active:bg-gray-200/80 transition-colors"
         onClick={() => onChange(quantity - 1)}
         aria-label="Уменьшить количество"
+        disabled={disabled}
       >
         <svg
           className="w-4 h-4"
@@ -33,6 +40,7 @@ function QuantityControl({
         className="w-9 h-9 flex items-center justify-center text-base font-medium text-brand-primary active:bg-brand-primary/10 transition-colors"
         onClick={() => onChange(quantity + 1)}
         aria-label="Увеличить количество"
+        disabled={disabled}
       >
         <svg
           className="w-4 h-4"
@@ -56,12 +64,25 @@ export function CartPage() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Record<string, true>>({});
+
+  const setPending = (productId: string, pending: boolean) => {
+    setPendingIds((prev) => {
+      const next = { ...prev };
+      if (pending) next[productId] = true;
+      else delete next[productId];
+      return next;
+    });
+  };
 
   const handleQuantityChange = async (productId: string, newQty: number) => {
+    if (pendingIds[productId]) return;
+    setPending(productId, true);
     setMutationError(null);
     const result =
       newQty <= 0 ? await removeItem(productId) : await updateQuantity(productId, newQty);
     if (result.error) setMutationError(result.error);
+    setPending(productId, false);
   };
 
   const handleApplyPromo = async () => {
@@ -198,14 +219,19 @@ export function CartPage() {
                 <QuantityControl
                   quantity={item.quantity}
                   onChange={(q) => handleQuantityChange(item.productId, q)}
+                  disabled={pendingIds[item.productId]}
                 />
                 <button
                   className="text-gray-400 hover:text-brand-error p-1.5 transition-colors"
                   aria-label="Удалить товар"
+                  disabled={pendingIds[item.productId]}
                   onClick={async () => {
+                    if (pendingIds[item.productId]) return;
+                    setPending(item.productId, true);
                     setMutationError(null);
                     const r = await removeItem(item.productId);
                     if (r.error) setMutationError(r.error);
+                    setPending(item.productId, false);
                   }}
                 >
                   <svg
