@@ -112,3 +112,8 @@ button {
 .page-canvas {
   background-color: var(--tg-bg);
 }
+
+/* Better tap feedback in Telegram WebView */
+:where(button, a) {
+  -webkit-tap-highlight-color: transparent;
+}

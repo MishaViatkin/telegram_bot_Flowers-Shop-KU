@@ -50,7 +50,8 @@ export function OrdersPage() {
   if (loading) {
     return (
       <div className="px-4 pt-5 pb-6">
-        <h1 className="text-xl font-bold mb-5">Мои заказы</h1>
+        <h1 className="text-xl font-bold mb-2">Мои заказы</h1>
+        <p className="text-sm text-[var(--tg-hint)] mb-5">История и статус доставки</p>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div
@@ -66,7 +67,8 @@ export function OrdersPage() {
   if (fetchError) {
     return (
       <div className="px-4 pt-5 pb-6 min-h-[80vh] flex flex-col animate-fade-in">
-        <h1 className="text-xl font-bold mb-6">Мои заказы</h1>
+        <h1 className="text-xl font-bold mb-2">Мои заказы</h1>
+        <p className="text-sm text-[var(--tg-hint)] mb-6">История и статус доставки</p>
         <div className="flex-1 flex flex-col items-center justify-center text-[var(--tg-hint)]">
           <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-4">
             <svg
@@ -84,7 +86,7 @@ export function OrdersPage() {
             </svg>
           </div>
           <p className="text-lg font-semibold text-[var(--tg-text)] mb-1">Не удалось загрузить</p>
-          <p className="text-sm mb-6 text-center">{fetchError}</p>
+          <p className="text-sm mb-6 text-center max-w-[280px] leading-relaxed">{fetchError}</p>
           <Button variant="primary" onClick={() => window.location.reload()}>
             Попробовать снова
           </Button>
@@ -96,7 +98,8 @@ export function OrdersPage() {
   if (orders.length === 0) {
     return (
       <div className="px-4 pt-5 pb-6 min-h-[80vh] flex flex-col animate-fade-in">
-        <h1 className="text-xl font-bold mb-6">Мои заказы</h1>
+        <h1 className="text-xl font-bold mb-2">Мои заказы</h1>
+        <p className="text-sm text-[var(--tg-hint)] mb-6">История и статус доставки</p>
         <div className="flex-1 flex flex-col items-center justify-center text-[var(--tg-hint)]">
           <div className="w-24 h-24 bg-[var(--tg-secondary-bg)] rounded-full flex items-center justify-center mb-5">
             <svg
@@ -132,7 +135,8 @@ export function OrdersPage() {
 
   return (
     <div className="px-4 pt-5 pb-6 animate-fade-in">
-      <h1 className="text-xl font-bold mb-5">Мои заказы</h1>
+      <h1 className="text-xl font-bold mb-2">Мои заказы</h1>
+      <p className="text-sm text-[var(--tg-hint)] mb-5">История и статус доставки</p>
 
       <div className="space-y-3">
         {orders.map((order, i) => {
