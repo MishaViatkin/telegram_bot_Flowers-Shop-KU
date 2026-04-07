@@ -9,9 +9,9 @@ export function CatalogPage() {
   const { products, loading } = useProducts(activeCategory, search || undefined);
 
   return (
-    <div className="pb-4">
-      {/* Hero: слои свечения + акценты как в лендинговых шаблонах (shadcn-style) */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-brand-primary via-brand-primary-dark to-[#7a2340] px-5 pt-7 pb-8">
+    <div className="pb-5">
+      {/* Hero: exaggerated minimalism (big type + lots of air) */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-primary via-brand-primary-dark to-[#7a2340] px-5 pt-8 pb-10">
         <div className="pointer-events-none absolute inset-0 -z-0" aria-hidden>
           <div className="absolute -top-24 left-1/2 h-48 w-[min(100%,24rem)] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute top-12 right-0 h-36 w-36 rounded-full bg-brand-accent/25 blur-2xl" />
@@ -20,15 +20,19 @@ export function CatalogPage() {
         <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/[0.06]" />
         <div className="absolute right-6 bottom-2 h-20 w-20 rounded-full bg-white/[0.06]" />
 
-        <h1 className="text-[1.35rem] sm:text-xl font-bold text-white mb-1.5 relative z-10 tracking-tight text-balance leading-snug">
-          <span className="text-white">Цветы </span>
-          <span className="text-brand-accent">Любимого Города</span>
+        <h1 className="relative z-10 tracking-[-0.04em] text-balance leading-[1.02]">
+          <span className="block text-white text-[clamp(30px,7.2vw,44px)] font-extrabold">
+            Цветы
+          </span>
+          <span className="block text-brand-accent text-[clamp(30px,7.2vw,44px)] font-extrabold">
+            Любимого Города
+          </span>
         </h1>
-        <p className="text-white/75 text-[13px] mb-4 relative z-10 leading-relaxed">
+        <p className="text-white/80 text-[13px] mt-3 mb-5 relative z-10 leading-relaxed max-w-[28ch]">
           Каменск-Уральский · Доставка от 1 часа
         </p>
 
-        <div className="inline-flex items-center gap-2.5 rounded-2xl border border-white/20 bg-white/12 px-3.5 py-2.5 shadow-[var(--shadow-float)] backdrop-blur-md relative z-10">
+        <div className="inline-flex items-center gap-2.5 rounded-2xl border border-white/20 bg-white/12 px-4 py-3 shadow-[var(--shadow-float)] backdrop-blur-md relative z-10">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-accent text-[11px] font-bold text-brand-text shadow-sm">
             %
           </span>
@@ -38,13 +42,13 @@ export function CatalogPage() {
 
       <div className="px-4">
         {/* Search */}
-        <div className="relative -mt-4 mb-4">
+        <div className="relative -mt-5 mb-4">
           <input
             type="text"
             placeholder="Найти букет, розы, композицию..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full px-4 py-3 pl-11 bg-white rounded-2xl text-sm outline-none shadow-[var(--shadow-card)] focus:shadow-[var(--shadow-card-hover)] transition-shadow duration-200 placeholder:text-gray-400"
+            className="w-full px-4 py-3.5 pl-11 bg-white rounded-2xl text-sm outline-none shadow-[var(--shadow-float)] border border-white/40 focus:shadow-[var(--shadow-card-hover)] transition-shadow duration-200 placeholder:text-gray-400"
           />
           <svg
             className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400"
@@ -82,7 +86,7 @@ export function CatalogPage() {
         {!catLoading && (
           <div className="flex gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
             <button
-              className={`shrink-0 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+              className={`shrink-0 px-4 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200 ${
                 !activeCategory
                   ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
                   : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
@@ -94,7 +98,7 @@ export function CatalogPage() {
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                className={`shrink-0 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                className={`shrink-0 px-4 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200 ${
                   activeCategory === cat.id
                     ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
                     : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"

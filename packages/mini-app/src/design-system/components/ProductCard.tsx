@@ -28,7 +28,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div
-      className="group border border-transparent bg-white rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)] hover:border-[var(--border-brand-subtle)] hover:shadow-[var(--shadow-card-hover)] cursor-pointer active:scale-[0.98] transition-all duration-200"
+      className="group border border-transparent bg-white rounded-[var(--radius-card)] overflow-hidden shadow-[var(--shadow-card)] hover:border-[var(--border-brand-subtle)] hover:shadow-[var(--shadow-card-hover)] cursor-pointer active:scale-[0.985] transition-all duration-200"
       onClick={() => navigate(`/product/${product.id}`)}
     >
       <div className="relative aspect-[4/5] bg-gray-50 overflow-hidden">
@@ -36,7 +36,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <img
             src={product.images[0]}
             alt={product.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
             loading="lazy"
           />
         ) : (
@@ -51,19 +51,19 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
         {hasDiscount && (
-          <span className="absolute top-2.5 left-2.5 bg-brand-accent text-brand-text text-[11px] font-bold px-2 py-0.5 rounded-lg shadow-sm">
+          <span className="absolute top-2.5 left-2.5 bg-brand-accent text-brand-text text-[11px] font-bold px-2.5 py-1 rounded-xl shadow-sm">
             -{discountPercent}%
           </span>
         )}
       </div>
 
       <div className="p-3 pb-3.5">
-        <h3 className="font-semibold text-[13px] leading-snug line-clamp-2 mb-2 min-h-[2.5em]">
+        <h3 className="font-semibold text-[13px] leading-snug line-clamp-2 mb-2 min-h-[2.5em] tracking-[-0.01em]">
           {product.title}
         </h3>
-        <div className="flex items-end justify-between gap-1">
+        <div className="flex items-end justify-between gap-2">
           <div className="flex flex-col gap-0.5">
-            <span className="text-brand-primary font-bold text-[15px] leading-none">
+            <span className="text-brand-primary font-extrabold text-[15px] leading-none tracking-[-0.02em]">
               {product.price.toLocaleString("ru-RU")} ₽
             </span>
             {hasDiscount && (
@@ -79,7 +79,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 ${
               inCart
                 ? "bg-brand-primary text-white shadow-sm"
-                : "bg-brand-primary/8 text-brand-primary hover:bg-brand-primary/15"
+                : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary/18"
             } ${adding ? "opacity-50" : ""}`}
           >
             {inCart ? (
