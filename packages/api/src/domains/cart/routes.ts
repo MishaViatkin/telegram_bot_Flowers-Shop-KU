@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { FastifyInstance } from "fastify";
+import type * as schema from "../../infra/db/schema.js";
 import { carts, products, promoCodes, users } from "../../infra/db/schema.js";
+
+type AppDb = PostgresJsDatabase<typeof schema>;
 
 type CartItemRow = {
   productId: string;
@@ -85,22 +89,33 @@ export async function ensureUser(app: FastifyInstance, userId: string): Promise<
   }
 }
 
-async function getOrCreateCartRow(app: FastifyInstance, userId: string) {
-  const [existing] = await app.db.select().from(carts).where(eq(carts.userId, userId)).limit(1);
+/** Serialize all cart mutations per user to prevent lost updates (parallel +/- / clear / add). */
+async function lockCartMutation(tx: AppDb, userId: string): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(abs(hashtext(${userId}::text))::bigint)`);
+}
+
+async function getOrCreateCartRowTx(tx: AppDb, userId: string) {
+  const [existing] = await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1);
   if (existing) return existing;
   const id = randomUUID();
   try {
-    await app.db.insert(carts).values({ id, userId, items: [] });
+    await tx.insert(carts).values({ id, userId, items: [] });
   } catch (err: unknown) {
     const code = (err as { code?: string }).code;
     if (code === "23505") {
-      const [again] = await app.db.select().from(carts).where(eq(carts.userId, userId)).limit(1);
+      const [again] = await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1);
       if (again) return again;
     }
     throw err;
   }
-  const [created] = await app.db.select().from(carts).where(eq(carts.id, id)).limit(1);
-  return created ?? (await app.db.select().from(carts).where(eq(carts.userId, userId)).limit(1))[0];
+  const [created] = await tx.select().from(carts).where(eq(carts.id, id)).limit(1);
+  return created ?? (await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1))[0];
+}
+
+async function loadPromoByCodeTx(tx: AppDb, code: string | null): Promise<PromoRow | undefined> {
+  if (!code) return undefined;
+  const [row] = await tx.select().from(promoCodes).where(eq(promoCodes.code, code)).limit(1);
+  return row;
 }
 
 async function loadPromoByCode(
@@ -197,48 +212,56 @@ export async function cartRoutes(app: FastifyInstance) {
       });
     }
 
-    const cartRow = await getOrCreateCartRow(app, userId);
-    const items = safeItems(cartRow.items);
     const image =
       Array.isArray(product.images) && product.images.length > 0 ? String(product.images[0]) : "";
-    const nextItems: CartItemRow[] = [...items];
-    const idx = nextItems.findIndex((i) => i.productId === productId);
-    const currentQty = idx >= 0 ? nextItems[idx].quantity : 0;
-    const newQty = Math.min(currentQty + quantity, 99, product.stock);
 
-    if (idx >= 0) {
-      nextItems[idx] = {
-        ...nextItems[idx],
-        title: product.title,
-        price: product.price,
-        image,
-        quantity: newQty,
+    const addResult = await app.db.transaction(async (tx) => {
+      await lockCartMutation(tx as AppDb, userId);
+      const cartRow = await getOrCreateCartRowTx(tx as AppDb, userId);
+      const items = safeItems(cartRow.items);
+      const nextItems: CartItemRow[] = [...items];
+      const idx = nextItems.findIndex((i) => i.productId === productId);
+      const currentQty = idx >= 0 ? nextItems[idx].quantity : 0;
+      const newQty = Math.min(currentQty + quantity, 99, product.stock);
+
+      if (idx >= 0) {
+        nextItems[idx] = {
+          ...nextItems[idx],
+          title: product.title,
+          price: product.price,
+          image,
+          quantity: newQty,
+        };
+      } else {
+        nextItems.push({
+          productId,
+          title: product.title,
+          price: product.price,
+          image,
+          quantity: newQty,
+        });
+      }
+      const now = new Date();
+      await tx
+        .update(carts)
+        .set({ items: nextItems, updatedAt: now })
+        .where(eq(carts.id, cartRow.id));
+      const [updated] = await tx.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
+      if (!updated) return { kind: "error" as const };
+      const promo = await loadPromoByCodeTx(tx as AppDb, updated.promoCode);
+      const totals = computeTotals(safeItems(updated.items), promo, userId);
+      return {
+        kind: "ok" as const,
+        data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
       };
-    } else {
-      nextItems.push({
-        productId,
-        title: product.title,
-        price: product.price,
-        image,
-        quantity: newQty,
-      });
-    }
-    const now = new Date();
-    await app.db
-      .update(carts)
-      .set({ items: nextItems, updatedAt: now })
-      .where(eq(carts.id, cartRow.id));
-    const [updated] = await app.db.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
-    if (!updated)
+    });
+
+    if (addResult.kind === "error") {
       return reply
         .status(500)
         .send({ success: false, error: { code: "SERVER_ERROR", message: "Cart update failed" } });
-    const promo = await loadPromoByCode(app, updated.promoCode);
-    const totals = computeTotals(safeItems(updated.items), promo, userId);
-    return {
-      success: true,
-      data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
-    };
+    }
+    return { success: true, data: addResult.data };
   });
 
   app.patch<{ Params: { productId: string } }>("/items/:productId", async (request, reply) => {
@@ -257,77 +280,103 @@ export async function cartRoutes(app: FastifyInstance) {
         .status(400)
         .send({ success: false, error: { code: "BAD_REQUEST", message: "Invalid quantity" } });
     }
-    const [cartRow] = await app.db.select().from(carts).where(eq(carts.userId, userId)).limit(1);
-    if (!cartRow)
-      return reply
-        .status(404)
-        .send({ success: false, error: { code: "NOT_FOUND", message: "Cart not found" } });
 
-    const items = safeItems(cartRow.items);
-    let nextItems: CartItemRow[];
-    if (quantity === 0) {
-      nextItems = items.filter((i) => i.productId !== productId);
-    } else {
-      const idx = items.findIndex((i) => i.productId === productId);
-      if (idx < 0)
-        return reply
-          .status(404)
-          .send({ success: false, error: { code: "NOT_FOUND", message: "Item not in cart" } });
-      nextItems = items.map((i, j) => (j === idx ? { ...i, quantity } : i));
+    const patchResult = await app.db.transaction(async (tx) => {
+      await lockCartMutation(tx as AppDb, userId);
+      const [cartRow] = await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1);
+      if (!cartRow) {
+        return { kind: "not_found" as const, message: "Cart not found" };
+      }
+
+      const items = safeItems(cartRow.items);
+      let nextItems: CartItemRow[];
+      if (quantity === 0) {
+        nextItems = items.filter((i) => i.productId !== productId);
+      } else {
+        const idx = items.findIndex((i) => i.productId === productId);
+        if (idx < 0) {
+          return { kind: "not_found" as const, message: "Item not in cart" };
+        }
+        nextItems = items.map((i, j) => (j === idx ? { ...i, quantity } : i));
+      }
+      const now = new Date();
+      await tx
+        .update(carts)
+        .set({ items: nextItems, updatedAt: now })
+        .where(eq(carts.id, cartRow.id));
+      const [updated] = await tx.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
+      if (!updated) return { kind: "error" as const };
+      const promo = await loadPromoByCodeTx(tx as AppDb, updated.promoCode);
+      const totals = computeTotals(safeItems(updated.items), promo, userId);
+      return {
+        kind: "ok" as const,
+        data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
+      };
+    });
+
+    if (patchResult.kind === "not_found") {
+      return reply.status(404).send({
+        success: false,
+        error: { code: "NOT_FOUND", message: patchResult.message },
+      });
     }
-    const now = new Date();
-    await app.db
-      .update(carts)
-      .set({ items: nextItems, updatedAt: now })
-      .where(eq(carts.id, cartRow.id));
-    const [updated] = await app.db.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
-    if (!updated)
+    if (patchResult.kind === "error") {
       return reply
         .status(500)
         .send({ success: false, error: { code: "SERVER_ERROR", message: "Cart update failed" } });
-    const promo = await loadPromoByCode(app, updated.promoCode);
-    const totals = computeTotals(safeItems(updated.items), promo, userId);
-    return {
-      success: true,
-      data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
-    };
+    }
+    return { success: true, data: patchResult.data };
   });
 
   app.delete<{ Params: { productId: string } }>("/items/:productId", async (request, reply) => {
     const userId = request.userId;
-    const [cartRow] = await app.db.select().from(carts).where(eq(carts.userId, userId)).limit(1);
-    if (!cartRow) return { success: true, data: emptyCartPayload(userId) };
-    const nextItems = safeItems(cartRow.items).filter(
-      (i) => i.productId !== request.params.productId,
-    );
-    const now = new Date();
-    await app.db
-      .update(carts)
-      .set({ items: nextItems, updatedAt: now })
-      .where(eq(carts.id, cartRow.id));
-    const [updated] = await app.db.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
-    if (!updated)
+    const { productId } = request.params;
+    const delResult = await app.db.transaction(async (tx) => {
+      await lockCartMutation(tx as AppDb, userId);
+      const [cartRow] = await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1);
+      if (!cartRow) {
+        return { kind: "ok" as const, data: emptyCartPayload(userId) };
+      }
+      const nextItems = safeItems(cartRow.items).filter((i) => i.productId !== productId);
+      const now = new Date();
+      await tx
+        .update(carts)
+        .set({ items: nextItems, updatedAt: now })
+        .where(eq(carts.id, cartRow.id));
+      const [updated] = await tx.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
+      if (!updated) return { kind: "error" as const };
+      const promo = await loadPromoByCodeTx(tx as AppDb, updated.promoCode);
+      const totals = computeTotals(safeItems(updated.items), promo, userId);
+      return {
+        kind: "ok" as const,
+        data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
+      };
+    });
+
+    if (delResult.kind === "error") {
       return reply
         .status(500)
         .send({ success: false, error: { code: "SERVER_ERROR", message: "Cart update failed" } });
-    const promo = await loadPromoByCode(app, updated.promoCode);
-    const totals = computeTotals(safeItems(updated.items), promo, userId);
-    return {
-      success: true,
-      data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
-    };
+    }
+    return { success: true, data: delResult.data };
   });
 
   app.delete("/", async (request) => {
     const userId = request.userId;
-    const [cartRow] = await app.db.select().from(carts).where(eq(carts.userId, userId)).limit(1);
-    if (!cartRow) return { success: true, data: emptyCartPayload(userId) };
-    const now = new Date();
-    await app.db
-      .update(carts)
-      .set({ items: [], promoCode: null, updatedAt: now })
-      .where(eq(carts.id, cartRow.id));
-    return { success: true, data: emptyCartPayload(userId) };
+    const clearResult = await app.db.transaction(async (tx) => {
+      await lockCartMutation(tx as AppDb, userId);
+      const [cartRow] = await tx.select().from(carts).where(eq(carts.userId, userId)).limit(1);
+      if (!cartRow) {
+        return { kind: "ok" as const, data: emptyCartPayload(userId) };
+      }
+      const now = new Date();
+      await tx
+        .update(carts)
+        .set({ items: [], promoCode: null, updatedAt: now })
+        .where(eq(carts.id, cartRow.id));
+      return { kind: "ok" as const, data: emptyCartPayload(userId) };
+    });
+    return { success: true, data: clearResult.data };
   });
 
   app.post("/promo", async (request, reply) => {
@@ -352,29 +401,39 @@ export async function cartRoutes(app: FastifyInstance) {
         error: { code: "INVALID_PROMO", message: "Promo code not found" },
       });
 
-    const cartRow = await getOrCreateCartRow(app, userId);
-    const items = safeItems(cartRow.items);
-    const { subtotal } = computeTotals(items, promo, userId);
-    if (!isPromoApplicable(promo, subtotal, userId)) {
+    const promoResult = await app.db.transaction(async (tx) => {
+      await lockCartMutation(tx as AppDb, userId);
+      const cartRow = await getOrCreateCartRowTx(tx as AppDb, userId);
+      const items = safeItems(cartRow.items);
+      const { subtotal } = computeTotals(items, promo, userId);
+      if (!isPromoApplicable(promo, subtotal, userId)) {
+        return { kind: "invalid" as const };
+      }
+      const now = new Date();
+      await tx
+        .update(carts)
+        .set({ promoCode: promo.code, updatedAt: now })
+        .where(eq(carts.id, cartRow.id));
+      const [updated] = await tx.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
+      if (!updated) return { kind: "error" as const };
+      const totals = computeTotals(safeItems(updated.items), promo, userId);
+      return {
+        kind: "ok" as const,
+        data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
+      };
+    });
+
+    if (promoResult.kind === "invalid") {
       return reply.status(400).send({
         success: false,
         error: { code: "INVALID_PROMO", message: "Promo code is not valid for this cart" },
       });
     }
-    const now = new Date();
-    await app.db
-      .update(carts)
-      .set({ promoCode: promo.code, updatedAt: now })
-      .where(eq(carts.id, cartRow.id));
-    const [updated] = await app.db.select().from(carts).where(eq(carts.id, cartRow.id)).limit(1);
-    if (!updated)
+    if (promoResult.kind === "error") {
       return reply
         .status(500)
         .send({ success: false, error: { code: "SERVER_ERROR", message: "Cart update failed" } });
-    const totals = computeTotals(safeItems(updated.items), promo, userId);
-    return {
-      success: true,
-      data: toCartPayload({ ...updated, items: safeItems(updated.items) }, totals),
-    };
+    }
+    return { success: true, data: promoResult.data };
   });
 }

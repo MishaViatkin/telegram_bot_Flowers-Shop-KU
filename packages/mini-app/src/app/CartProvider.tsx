@@ -1,5 +1,13 @@
 import type { Cart, CartItem } from "@flowers-tg/shared";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { apiClient, getInitData } from "@/api/client";
 
 interface CartContextValue {
@@ -10,7 +18,7 @@ interface CartContextValue {
   addItem: (productId: string, quantity?: number) => Promise<{ error?: string }>;
   updateQuantity: (productId: string, quantity: number) => Promise<{ error?: string }>;
   removeItem: (productId: string) => Promise<{ error?: string }>;
-  clearCart: () => Promise<void>;
+  clearCart: () => Promise<{ error?: string }>;
   applyPromo: (code: string) => Promise<{ error?: string }>;
   refresh: () => Promise<void>;
 }
@@ -23,7 +31,7 @@ const CartContext = createContext<CartContextValue>({
   addItem: async () => ({}),
   updateQuantity: async () => ({}),
   removeItem: async () => ({}),
-  clearCart: async () => {},
+  clearCart: async () => ({}),
   applyPromo: async () => ({}),
   refresh: async () => {},
 });
@@ -62,118 +70,155 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const mutationTailRef = useRef(Promise.resolve());
 
   const itemCount =
     cart?.items.reduce<number>((sum: number, item: CartItem) => sum + item.quantity, 0) ?? 0;
 
-  const refresh = useCallback(async () => {
-    const auth = requireTelegramAuth();
-    if (!auth.ok) {
-      setCart(emptyCart());
-      setError(auth.error);
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await apiClient<{ data: Cart }>("/cart");
-      setCart(res.data);
-      setError(null);
-    } catch (err) {
-      setCart(emptyCart());
-      setError(errMsg(err));
-    } finally {
-      setLoading(false);
-    }
+  const withMutationQueue = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    const run = mutationTailRef.current.then(() => fn());
+    mutationTailRef.current = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
   }, []);
 
+  const refresh = useCallback(async () => {
+    await withMutationQueue(async () => {
+      const auth = requireTelegramAuth();
+      if (!auth.ok) {
+        setCart(emptyCart());
+        setError(auth.error);
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await apiClient<{ data: Cart }>("/cart");
+        setCart(res.data);
+        setError(null);
+      } catch (err) {
+        setCart(emptyCart());
+        setError(errMsg(err));
+      } finally {
+        setLoading(false);
+      }
+    });
+  }, [withMutationQueue]);
+
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   const addItem = useCallback(
     async (productId: string, quantity = 1): Promise<{ error?: string }> => {
       const auth = requireTelegramAuth();
       if (!auth.ok) return { error: auth.error };
-      try {
-        const res = await apiClient<{ data: Cart }>("/cart/items", {
-          method: "POST",
-          body: JSON.stringify({ productId, quantity }),
-        });
-        setCart(res.data);
-        setError(null);
-        return {};
-      } catch (err) {
-        return { error: errMsg(err) };
-      }
+      return withMutationQueue(async () => {
+        try {
+          const res = await apiClient<{ data: Cart }>("/cart/items", {
+            method: "POST",
+            body: JSON.stringify({ productId, quantity }),
+          });
+          setCart(res.data);
+          setError(null);
+          return {};
+        } catch (err) {
+          return { error: errMsg(err) };
+        }
+      });
     },
-    [],
+    [withMutationQueue],
   );
 
   const updateQuantity = useCallback(
     async (productId: string, quantity: number): Promise<{ error?: string }> => {
       const auth = requireTelegramAuth();
       if (!auth.ok) return { error: auth.error };
-      try {
-        const res = await apiClient<{ data: Cart }>(`/cart/items/${productId}`, {
-          method: "PATCH",
-          body: JSON.stringify({ quantity }),
-        });
-        setCart(res.data);
-        setError(null);
-        return {};
-      } catch (err) {
-        return { error: errMsg(err) };
-      }
+      return withMutationQueue(async () => {
+        try {
+          const res = await apiClient<{ data: Cart }>(`/cart/items/${productId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ quantity }),
+          });
+          setCart(res.data);
+          setError(null);
+          return {};
+        } catch (err) {
+          return { error: errMsg(err) };
+        }
+      });
     },
-    [],
+    [withMutationQueue],
   );
 
-  const removeItem = useCallback(async (productId: string): Promise<{ error?: string }> => {
-    const auth = requireTelegramAuth();
-    if (!auth.ok) return { error: auth.error };
-    try {
-      const res = await apiClient<{ data: Cart }>(`/cart/items/${productId}`, {
-        method: "DELETE",
+  const removeItem = useCallback(
+    async (productId: string): Promise<{ error?: string }> => {
+      const auth = requireTelegramAuth();
+      if (!auth.ok) return { error: auth.error };
+      return withMutationQueue(async () => {
+        try {
+          const res = await apiClient<{ data: Cart }>(`/cart/items/${productId}`, {
+            method: "DELETE",
+          });
+          setCart(res.data);
+          setError(null);
+          return {};
+        } catch (err) {
+          return { error: errMsg(err) };
+        }
       });
-      setCart(res.data);
-      setError(null);
-      return {};
-    } catch (err) {
-      return { error: errMsg(err) };
-    }
-  }, []);
+    },
+    [withMutationQueue],
+  );
 
-  const clearCart = useCallback(async () => {
+  const clearCart = useCallback(async (): Promise<{ error?: string }> => {
     const auth = requireTelegramAuth();
     if (!auth.ok) {
       setCart(emptyCart());
       setError(auth.error);
-      return;
+      return { error: auth.error };
     }
-    try {
-      const res = await apiClient<{ data: Cart }>("/cart", { method: "DELETE" });
-      setCart(res.data);
-      setError(null);
-    } catch {
-      setCart(emptyCart());
-    }
-  }, []);
+    return withMutationQueue(async () => {
+      try {
+        const res = await apiClient<{ data: Cart }>("/cart", { method: "DELETE" });
+        setCart(res.data);
+        setError(null);
+        return {};
+      } catch (err) {
+        const msg = errMsg(err);
+        setError(msg);
+        try {
+          const res = await apiClient<{ data: Cart }>("/cart");
+          setCart(res.data);
+        } catch {
+          /* keep previous cart state */
+        }
+        return { error: msg };
+      }
+    });
+  }, [withMutationQueue]);
 
-  const applyPromo = useCallback(async (code: string): Promise<{ error?: string }> => {
-    const auth = requireTelegramAuth();
-    if (!auth.ok) return { error: auth.error };
-    try {
-      const res = await apiClient<{ data: Cart }>("/cart/promo", {
-        method: "POST",
-        body: JSON.stringify({ code }),
+  const applyPromo = useCallback(
+    async (code: string): Promise<{ error?: string }> => {
+      const auth = requireTelegramAuth();
+      if (!auth.ok) return { error: auth.error };
+      return withMutationQueue(async () => {
+        try {
+          const res = await apiClient<{ data: Cart }>("/cart/promo", {
+            method: "POST",
+            body: JSON.stringify({ code }),
+          });
+          setCart(res.data);
+          setError(null);
+          return {};
+        } catch (err) {
+          return { error: errMsg(err) };
+        }
       });
-      setCart(res.data);
-      setError(null);
-      return {};
-    } catch (err) {
-      return { error: errMsg(err) };
-    }
-  }, []);
+    },
+    [withMutationQueue],
+  );
 
   return (
     <CartContext.Provider

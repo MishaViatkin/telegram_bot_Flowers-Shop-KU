@@ -63,6 +63,7 @@ export function CartPage() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Record<string, true>>({});
 
@@ -100,7 +101,9 @@ export function CartPage() {
 
   const handleClear = async () => {
     setClearing(true);
-    await clearCart();
+    setClearError(null);
+    const result = await clearCart();
+    if (result.error) setClearError(result.error);
     setClearing(false);
   };
 
@@ -179,6 +182,12 @@ export function CartPage() {
           {clearing ? "Очистка..." : "Очистить"}
         </button>
       </div>
+
+      {clearError && (
+        <div className="bg-red-50 text-brand-error text-sm px-4 py-3 rounded-2xl mb-4 font-medium">
+          {clearError}
+        </div>
+      )}
 
       <div className="space-y-3 mb-5">
         {items.map((item: CartItem, i: number) => (
