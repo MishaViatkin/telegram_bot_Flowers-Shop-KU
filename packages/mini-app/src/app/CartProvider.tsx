@@ -1,6 +1,6 @@
 import type { Cart, CartItem } from "@flowers-tg/shared";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import { apiClient } from "@/api/client";
+import { apiClient, getInitData } from "@/api/client";
 
 interface CartContextValue {
   cart: Cart | null;
@@ -49,6 +49,15 @@ function errMsg(err: unknown): string {
   return String(err);
 }
 
+function requireTelegramAuth(): { ok: true } | { ok: false; error: string } {
+  if (!import.meta.env.PROD) return { ok: true };
+  if (getInitData()) return { ok: true };
+  return {
+    ok: false,
+    error: "Корзина доступна только внутри Telegram. Откройте мини‑приложение через бота.",
+  };
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,6 +67,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     cart?.items.reduce<number>((sum: number, item: CartItem) => sum + item.quantity, 0) ?? 0;
 
   const refresh = useCallback(async () => {
+    const auth = requireTelegramAuth();
+    if (!auth.ok) {
+      setCart(emptyCart());
+      setError(auth.error);
+      setLoading(false);
+      return;
+    }
     try {
       const res = await apiClient<{ data: Cart }>("/cart");
       setCart(res.data);
@@ -76,6 +92,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     async (productId: string, quantity = 1): Promise<{ error?: string }> => {
+      const auth = requireTelegramAuth();
+      if (!auth.ok) return { error: auth.error };
       try {
         const res = await apiClient<{ data: Cart }>("/cart/items", {
           method: "POST",
@@ -93,6 +111,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = useCallback(
     async (productId: string, quantity: number): Promise<{ error?: string }> => {
+      const auth = requireTelegramAuth();
+      if (!auth.ok) return { error: auth.error };
       try {
         const res = await apiClient<{ data: Cart }>(`/cart/items/${productId}`, {
           method: "PATCH",
@@ -109,6 +129,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const removeItem = useCallback(async (productId: string): Promise<{ error?: string }> => {
+    const auth = requireTelegramAuth();
+    if (!auth.ok) return { error: auth.error };
     try {
       const res = await apiClient<{ data: Cart }>(`/cart/items/${productId}`, {
         method: "DELETE",
@@ -122,6 +144,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearCart = useCallback(async () => {
+    const auth = requireTelegramAuth();
+    if (!auth.ok) {
+      setCart(emptyCart());
+      setError(auth.error);
+      return;
+    }
     try {
       const res = await apiClient<{ data: Cart }>("/cart", { method: "DELETE" });
       setCart(res.data);
@@ -132,6 +160,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyPromo = useCallback(async (code: string): Promise<{ error?: string }> => {
+    const auth = requireTelegramAuth();
+    if (!auth.ok) return { error: auth.error };
     try {
       const res = await apiClient<{ data: Cart }>("/cart/promo", {
         method: "POST",

@@ -58,7 +58,7 @@ function QuantityControl({
 
 export function CartPage() {
   const navigate = useNavigate();
-  const { cart, loading, updateQuantity, removeItem, clearCart, applyPromo } = useCart();
+  const { cart, loading, error, updateQuantity, removeItem, clearCart, applyPromo } = useCart();
   const [promoInput, setPromoInput] = useState("");
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
@@ -148,9 +148,11 @@ export function CartPage() {
               />
             </svg>
           </div>
-          <p className="text-lg font-semibold text-[var(--tg-text)] mb-1">Корзина пуста</p>
-          <p className="text-sm mb-8 text-center max-w-[250px]">
-            Выберите букет из каталога — мы доставим его за 1 час
+          <p className="text-lg font-semibold text-[var(--tg-text)] mb-1">
+            {error ? "Недоступно" : "Корзина пуста"}
+          </p>
+          <p className="text-sm mb-8 text-center max-w-[280px] leading-relaxed">
+            {error ?? "Выберите букет из каталога — мы доставим его за 1 час"}
           </p>
           <Button
             variant="primary"
