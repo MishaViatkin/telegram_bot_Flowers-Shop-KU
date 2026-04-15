@@ -22,14 +22,14 @@
 - **Админка:** `/admin` + `/api/admin/*`, ключ `ADMIN_API_SECRET` (заказы, товары).
 - **M3 (оплата):** YooKassa — `POST /api/payments`, `GET /api/payments/order/:id`, `POST /api/webhooks/yookassa` (верификация через GET к API YooKassa), таблицы `payments` + `webhook_events`, checkout с `card_online`, `/payment/return`.
 - YooKassa webhook: дедупликация до вызова провайдера + отдельный rate limit на webhook.
-- **Деплой в Telegram отложен до M6** — чеклист: `DEPLOY_TELEGRAM_CHECKLIST.md`.
+- **Деплой в Telegram:** прод (HTTPS API + статика + webhook); чеклист: `DEPLOY_TELEGRAM_CHECKLIST.md` (выполнен).
 
 ### Следующие шаги (приоритет)
 
-1. **M3 — довести:** ручной прогон с тестовым магазином YooKassa; в кабинете указать публичный webhook `https://<api>/api/webhooks/yookassa`; задать `MINI_APP_PUBLIC_URL`, `YOOKASSA_*` на API.
-2. Параллельно по желанию: **E2E smoke** (Playwright), **lint в CI** (M7).
-3. **M5** (cron/напоминания) — после стабильного контура заказ+оплата.
-4. **M6** — деплой, прод-секреты, при необходимости RBAC в админке.
+1. **M3 — довести:** при необходимости повторный ручной прогон YooKassa (тестовый магазин/карта); webhook `https://<api>/api/webhooks/yookassa`, `MINI_APP_PUBLIC_URL`, `YOOKASSA_*` на API.
+2. **M5** — триггеры и напоминания (cron/worker + Redis).
+3. **M6 (опционально):** усиление админки (фильтры, платежи в карточке заказа, RBAC).
+4. **M7:** E2E в CI, мониторинг `/health`, `pnpm audit` / Dependabot.
 
 **Дорожная карта с микрошагами:** `ROADMAP.md`  
 **Правила Cursor:** `.cursor/rules/project-overview.mdc`

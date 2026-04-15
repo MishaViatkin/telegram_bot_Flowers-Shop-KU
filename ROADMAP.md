@@ -17,7 +17,7 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 | API: rate limit, CI typecheck/build | Готово |
 | Админка (базовая) | Готово |
 | Оплата (YooKassa) | Базовый срез (создание платежа + webhook + UI) |
-| Деплой в Telegram | Отложено до **M6** |
+| Деплой в Telegram | Готово (прод: HTTPS API, статика, webhook бота) |
 | Security hardening | Готово (базовый срез M7; см. список ниже) |
 | Mini-app UI | Полировка витрины (каталог, карточки, состояния загрузки) |
 
@@ -34,13 +34,13 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 - [x] Клиент: страницы каталога, товара, корзины, checkout, списка заказов, трекинга
 - [x] Витрина: липкие категории, статус поиска, пустые состояния; карточка товара — бейдж «В корзине», спиннер при добавлении
 
-### Отложено до M6 (не блокирует разработку)
+### Прод (Telegram)
 
-- [ ] Задеплоить API на публичный HTTPS
-- [ ] Задеплоить статику Mini App на HTTPS
-- [ ] Задеплоить бот-сервис (webhook)
-- [ ] Заполнить прод-переменные (`TELEGRAM_BOT_TOKEN`, `INTERNAL_API_SECRET`, `DATABASE_URL`, `CORS_ORIGIN`, …)
-- [ ] Пройти `DEPLOY_TELEGRAM_CHECKLIST.md` целиком
+- [x] API на публичном HTTPS
+- [x] Статика Mini App на HTTPS
+- [x] Бот-сервис (webhook)
+- [x] Прод-переменные (`TELEGRAM_BOT_TOKEN`, `INTERNAL_API_SECRET`, `DATABASE_URL`, `CORS_ORIGIN`, …)
+- [x] Чеклист `DEPLOY_TELEGRAM_CHECKLIST.md` пройден
 
 ---
 
@@ -132,12 +132,12 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 - [ ] Просмотр платежей (после M3) в карточке заказа
 - [ ] Роли: отдельные учётки или SSO (оценка трудозатрат)
 
-### Релиз в Telegram (гейт M6)
+### Релиз в Telegram
 
-- [ ] Выполнить пункты `DEPLOY_TELEGRAM_CHECKLIST.md` по порядку
-- [ ] Настроить `CORS_ORIGIN` строго под origin Mini App
-- [ ] Проверить webhook бота (`secret_token` / ограничение доступа)
-- [ ] Смоук-тест из Telegram: каталог → заказ → (оплата) → уведомление
+- [x] Пункты `DEPLOY_TELEGRAM_CHECKLIST.md` выполнены
+- [x] `CORS_ORIGIN` под origin Mini App
+- [x] Webhook бота настроен (`secret_token` / ограничение доступа)
+- [x] Смоук-тест из Telegram: каталог → заказ → (оплата) → уведомление
 
 ---
 
@@ -179,7 +179,7 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 | **backend-patterns** | Новые маршруты Fastify, ошибки, валидация Zod |
 | **e2e-testing** | Playwright после стабилизации основных флоу |
 | **tdd-workflow** | По желанию — тесты перед фичами на критичных модулях |
-| **deployment-patterns** | Когда дойдёте до M6 и CI/CD прод |
+| **deployment-patterns** | Регрессии после изменений, мониторинг `/health` в проде |
 
 ---
 
