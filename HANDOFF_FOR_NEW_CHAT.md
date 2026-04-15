@@ -13,6 +13,7 @@
 - Витрина: каталог, товар, корзина, checkout, заказы, трекинг заказа.
 - `POST /api/orders/validate`, создание заказа с проверкой цен/остатков, промокоды, таймлайн статусов.
 - Auth: `X-Init-Data` (Telegram) / `X-User-Id` (только dev); бот → API через `INTERNAL_API_SECRET`.
+- Security hardening: API/bot `bodyLimit`, единые error/notFound handlers; `X-Init-Data` TTL по умолчанию 15 минут + anti-replay по `query_id`.
 - Бот: `/start` с `ref_`, welcome-промо, уведомления о заказах (`/internal/notify` с API).
 - Рефералка: бот + `POST /api/users/referral`, mini-app при `startapp=ref_` / `?ref=`.
 - Поделиться товаром (deep link `product_<id>`).
@@ -20,6 +21,7 @@
 - Глобальный rate limit API; GitHub Actions: typecheck + build.
 - **Админка:** `/admin` + `/api/admin/*`, ключ `ADMIN_API_SECRET` (заказы, товары).
 - **M3 (оплата):** YooKassa — `POST /api/payments`, `GET /api/payments/order/:id`, `POST /api/webhooks/yookassa` (верификация через GET к API YooKassa), таблицы `payments` + `webhook_events`, checkout с `card_online`, `/payment/return`.
+- YooKassa webhook: дедупликация до вызова провайдера + отдельный rate limit на webhook.
 - **Деплой в Telegram отложен до M6** — чеклист: `DEPLOY_TELEGRAM_CHECKLIST.md`.
 
 ### Следующие шаги (приоритет)

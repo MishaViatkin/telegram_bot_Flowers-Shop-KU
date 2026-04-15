@@ -9,7 +9,7 @@ export function CatalogPage() {
   const { products, loading } = useProducts(activeCategory, search || undefined);
 
   return (
-    <div className="pb-5">
+    <div className="pb-6">
       {/* Hero: exaggerated minimalism (big type + lots of air) */}
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-primary via-brand-primary-dark to-[#7a2340] px-5 pt-8 pb-10">
         <div className="pointer-events-none absolute inset-0 -z-0" aria-hidden>
@@ -84,32 +84,49 @@ export function CatalogPage() {
 
         {/* Categories */}
         {!catLoading && (
-          <div className="flex gap-2 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
-            <button
-              className={`shrink-0 px-4 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200 ${
-                !activeCategory
-                  ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
-                  : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
-              }`}
-              onClick={() => setActiveCategory(undefined)}
-            >
-              Все
-            </button>
-            {categories.map((cat) => (
+          <div className="sticky top-0 z-[5] -mx-4 px-4 pb-3 bg-gradient-to-b from-[var(--tg-bg)] via-[var(--tg-bg)] to-transparent">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               <button
-                key={cat.id}
                 className={`shrink-0 px-4 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200 ${
-                  activeCategory === cat.id
+                  !activeCategory
                     ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
                     : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
                 }`}
-                onClick={() => setActiveCategory(cat.id)}
+                onClick={() => setActiveCategory(undefined)}
               >
-                {cat.name}
+                Все
               </button>
-            ))}
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  className={`shrink-0 px-4 py-2.5 rounded-2xl text-[13px] font-semibold transition-all duration-200 ${
+                    activeCategory === cat.id
+                      ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
+                      : "bg-[var(--tg-secondary-bg)] text-[var(--tg-text)] hover:bg-gray-200"
+                  }`}
+                  onClick={() => setActiveCategory(cat.id)}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
           </div>
         )}
+
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[13px] text-[var(--tg-hint)]">
+            {loading ? "Подбираем букеты..." : `${products.length} в каталоге`}
+          </p>
+          {search && !loading && (
+            <button
+              className="text-[13px] text-brand-primary font-semibold"
+              onClick={() => setSearch("")}
+              type="button"
+            >
+              Сбросить поиск
+            </button>
+          )}
+        </div>
 
         {/* Products */}
         {loading ? (
@@ -117,7 +134,7 @@ export function CatalogPage() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-2xl overflow-hidden bg-white shadow-[var(--shadow-card)]"
+                className="rounded-2xl overflow-hidden bg-white shadow-[var(--shadow-card)] border border-transparent"
               >
                 <div className="aspect-[4/5] bg-gray-100 animate-pulse" />
                 <div className="p-3 space-y-2.5">
@@ -129,8 +146,8 @@ export function CatalogPage() {
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20 animate-fade-in">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--tg-secondary-bg)] flex items-center justify-center">
+          <div className="text-center py-20 animate-fade-in rounded-3xl bg-white/70 border border-[var(--border-brand-subtle)]/40 shadow-[var(--shadow-card)]">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--tg-secondary-bg)] flex items-center justify-center shadow-inner">
               <svg
                 className="w-7 h-7 text-[var(--tg-hint)]"
                 fill="none"
@@ -146,7 +163,9 @@ export function CatalogPage() {
               </svg>
             </div>
             <p className="font-semibold text-[var(--tg-text)] mb-1">Ничего не найдено</p>
-            <p className="text-sm text-[var(--tg-hint)]">Попробуйте изменить запрос</p>
+            <p className="text-sm text-[var(--tg-hint)]">
+              Попробуйте другой запрос или переключите категорию
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

@@ -24,6 +24,19 @@ declare module "fastify" {
   }
 }
 
+function parsePublicHttpsUrl(raw: string, name: string): URL {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`${name} must be a valid URL`);
+  }
+  if (url.protocol !== "https:") {
+    throw new Error(`${name} must use https://`);
+  }
+  return url;
+}
+
 export async function buildApp() {
   const isProd = process.env.NODE_ENV === "production";
   const corsOrigins = process.env.CORS_ORIGIN?.trim();
@@ -39,7 +52,13 @@ export async function buildApp() {
         ? { origin: false as const }
         : { origin: true as const };
 
+  const bodyLimit =
+    Number(process.env.BODY_LIMIT_BYTES) > 0
+      ? Number(process.env.BODY_LIMIT_BYTES)
+      : 1 * 1024 * 1024;
+
   const app = Fastify({
+    bodyLimit,
     logger: {
       level: process.env.LOG_LEVEL ?? "info",
       redact: [
@@ -57,6 +76,10 @@ export async function buildApp() {
         "SECURITY: CORS_ORIGIN is required in production for the mini-app to work in browsers/Telegram WebView.",
       );
       throw new Error("CORS_ORIGIN is required in production");
+    }
+    const miniAppPublicUrl = process.env.MINI_APP_PUBLIC_URL?.trim();
+    if (miniAppPublicUrl) {
+      parsePublicHttpsUrl(miniAppPublicUrl, "MINI_APP_PUBLIC_URL");
     }
     if (process.env.ALLOW_DEV_USER_ID_AUTH === "true") {
       app.log.warn(
@@ -91,6 +114,27 @@ export async function buildApp() {
     contentSecurityPolicy: false,
   });
 
+  app.setNotFoundHandler(async (_request, reply) => {
+    return reply.status(404).send({
+      success: false,
+      error: { code: "NOT_FOUND", message: "Not found" },
+    });
+  });
+
+  app.setErrorHandler(async (err, request, reply) => {
+    const statusCode = (err as { statusCode?: number }).statusCode ?? 500;
+    const errorCode = (err as { errorCode?: string }).errorCode ?? "SERVER_ERROR";
+    const message =
+      statusCode >= 500 ? "Внутренняя ошибка сервера" : (err as Error).message || "Ошибка запроса";
+
+    request.log.error({ err, url: request.url, reqId: request.id }, "Unhandled error");
+
+    return reply.status(statusCode).send({
+      success: false,
+      error: { code: String(errorCode), message },
+    });
+  });
+
   const maxGlobal = Number(process.env.RATE_LIMIT_MAX) || 400;
   const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS) || 60_000;
 
@@ -100,7 +144,7 @@ export async function buildApp() {
     timeWindow: windowMs,
     allowList: (request) => {
       const url = request.url.split("?")[0] ?? request.url;
-      return url === "/health" || url === "/api/webhooks/yookassa";
+      return url === "/health";
     },
   });
 

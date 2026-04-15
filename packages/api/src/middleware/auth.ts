@@ -16,7 +16,26 @@ interface TelegramUser {
   username?: string;
 }
 
-const INIT_DATA_MAX_AGE_SEC = Number(process.env.INIT_DATA_MAX_AGE_SEC) || 86400;
+// Telegram initData is a bearer credential; keep the replay window small by default.
+const INIT_DATA_MAX_AGE_SEC = Number(process.env.INIT_DATA_MAX_AGE_SEC) || 900;
+const INIT_DATA_REPLAY_TTL_SEC =
+  Number(process.env.INIT_DATA_REPLAY_TTL_SEC) ||
+  Math.min(900, Math.max(60, INIT_DATA_MAX_AGE_SEC));
+
+const seenQueryIds = new Map<string, number>();
+let lastCleanupMs = 0;
+
+function cleanupSeen(nowMs: number) {
+  // Best-effort cleanup to avoid unbounded memory growth.
+  if (nowMs - lastCleanupMs < 30_000) return;
+  lastCleanupMs = nowMs;
+  const ttlMs = INIT_DATA_REPLAY_TTL_SEC * 1000;
+  for (const [key, ts] of seenQueryIds) {
+    if (nowMs - ts > ttlMs) {
+      seenQueryIds.delete(key);
+    }
+  }
+}
 
 export function validateInitData(
   initData: string,
@@ -58,6 +77,17 @@ function isFreshInitData(data: Record<string, string>): boolean {
   if (!Number.isFinite(authDate)) return false;
   const ageSec = Date.now() / 1000 - authDate;
   return ageSec >= 0 && ageSec <= INIT_DATA_MAX_AGE_SEC;
+}
+
+function isReplayInitData(data: Record<string, string>): boolean {
+  const queryId = data.query_id;
+  if (!queryId) return false;
+  const nowMs = Date.now();
+  cleanupSeen(nowMs);
+  const prev = seenQueryIds.get(queryId);
+  if (prev != null && nowMs - prev <= INIT_DATA_REPLAY_TTL_SEC * 1000) return true;
+  seenQueryIds.set(queryId, nowMs);
+  return false;
 }
 
 /**
@@ -118,6 +148,13 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
       return reply.status(401).send({
         success: false,
         error: { code: "UNAUTHORIZED", message: "initData expired; reopen the app" },
+      });
+    }
+
+    if (isReplayInitData(data)) {
+      return reply.status(401).send({
+        success: false,
+        error: { code: "UNAUTHORIZED", message: "initData replay detected; reopen the app" },
       });
     }
 

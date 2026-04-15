@@ -1,6 +1,24 @@
 import { type DomainEvent, eventBus } from "./bus.js";
 
-const BOT_NOTIFY_URL = process.env.BOT_NOTIFY_URL || "http://localhost:3001/internal/notify";
+function parseBotNotifyUrl(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("BOT_NOTIFY_URL must be a valid URL");
+  }
+  if (url.pathname !== "/internal/notify") {
+    throw new Error("BOT_NOTIFY_URL must point to /internal/notify");
+  }
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw new Error("BOT_NOTIFY_URL must use https:// in production");
+  }
+  return url.toString();
+}
+
+const BOT_NOTIFY_URL = parseBotNotifyUrl(
+  process.env.BOT_NOTIFY_URL || "http://localhost:3001/internal/notify",
+);
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET?.trim() || "";
 
 function isOrderNotifyEvent(event: DomainEvent): event is DomainEvent & {

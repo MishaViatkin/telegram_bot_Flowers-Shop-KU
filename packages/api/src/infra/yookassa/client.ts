@@ -2,6 +2,16 @@
  * YooKassa REST API (v3). Docs: https://yookassa.ru/developers/api
  */
 
+function parseUrl(raw: string, name: string): URL {
+  try {
+    return new URL(raw);
+  } catch {
+    throw Object.assign(new Error(`${name} must be a valid URL`), {
+      code: "YOOKASSA_BAD_CONFIG",
+    });
+  }
+}
+
 function getCredentials(): { shopId: string; secretKey: string } {
   const shopId = process.env.YOOKASSA_SHOP_ID?.trim();
   const secretKey = process.env.YOOKASSA_SECRET_KEY?.trim();
@@ -21,8 +31,18 @@ const DEFAULT_API = "https://api.yookassa.ru/v3";
 
 function paymentsBaseUrl(): string {
   const raw = process.env.YOOKASSA_API_BASE_URL?.trim();
-  if (!raw) return DEFAULT_API;
-  return raw.replace(/\/$/, "");
+  if (!raw) {
+    return DEFAULT_API;
+  }
+
+  const url = parseUrl(raw, "YOOKASSA_API_BASE_URL");
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw Object.assign(new Error("YOOKASSA_API_BASE_URL must use https:// in production"), {
+      code: "YOOKASSA_BAD_CONFIG",
+    });
+  }
+
+  return url.toString().replace(/\/$/, "");
 }
 
 export function formatAmountRub(total: number): string {
@@ -122,13 +142,18 @@ export async function getPayment(paymentId: string): Promise<YooPaymentSnapshot>
     });
   }
 
-  const data = JSON.parse(rawText) as {
+  let data: {
     id: string;
     status: import("@flowers-tg/shared").YooKassaPaymentStatus;
     amount: { value: string; currency: string };
     metadata?: Record<string, unknown>;
     confirmation?: { confirmation_url?: string };
   };
+  try {
+    data = JSON.parse(rawText) as typeof data;
+  } catch {
+    throw Object.assign(new Error("Invalid JSON from YooKassa"), { code: "YOOKASSA_BAD_RESPONSE" });
+  }
 
   return {
     id: data.id,

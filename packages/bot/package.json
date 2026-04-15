@@ -13,16 +13,17 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@flowers-tg/shared": "workspace:*",
-    "grammy": "~1.39.3",
-    "fastify": "^5.2",
     "@fastify/cors": "^11.0",
     "@fastify/helmet": "^13.0.1",
-    "dotenv": "^16.4"
+    "@fastify/rate-limit": "^10.3.0",
+    "@flowers-tg/shared": "workspace:*",
+    "dotenv": "^16.4",
+    "fastify": "^5.2",
+    "grammy": "~1.39.3"
   },
   "devDependencies": {
-    "typescript": "^5.7",
+    "@types/node": "^22",
     "tsx": "^4.19",
-    "@types/node": "^22"
+    "typescript": "^5.7"
   }
 }

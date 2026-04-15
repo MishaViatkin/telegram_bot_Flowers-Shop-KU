@@ -18,6 +18,8 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 | Админка (базовая) | Готово |
 | Оплата (YooKassa) | Базовый срез (создание платежа + webhook + UI) |
 | Деплой в Telegram | Отложено до **M6** |
+| Security hardening | Готово (базовый срез M7; см. список ниже) |
+| Mini-app UI | Полировка витрины (каталог, карточки, состояния загрузки) |
 
 ---
 
@@ -30,6 +32,7 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 - [x] Промокоды на заказе и в корзине
 - [x] Таймлайн статусов заказа
 - [x] Клиент: страницы каталога, товара, корзины, checkout, списка заказов, трекинга
+- [x] Витрина: липкие категории, статус поиска, пустые состояния; карточка товара — бейдж «В корзине», спиннер при добавлении
 
 ### Отложено до M6 (не блокирует разработку)
 
@@ -69,6 +72,7 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 - [x] `POST /api/webhooks/yookassa` (без auth middleware)
 - [x] Проверка: **GET платежа в YooKassa** по `object.id` из тела (не доверяем только телу)
 - [x] Идемпотентность: `webhook_events.dedupe_key`
+- [x] Anti-DoS: дедупликация **до** вызова провайдера + отдельный rate limit на webhook
 - [x] `succeeded` → заказ `created` → `confirmed`, таймлайн, event bus
 - [x] `canceled` / `cancelled` → `failed_payment`, возврат остатков
 - [x] Логи: без секретов тела (при ошибках — коды/ids)
@@ -146,14 +150,23 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 - [x] Security headers (Fastify Helmet) для API и bot-сервиса
 - [x] Graceful shutdown + закрытие DB соединений (API) / остановка long-polling (bot)
 - [x] Отдельный лимит на `/api/admin` (защита от перебора секрета)
+- [x] API: `bodyLimit` + единый error/notFound handler (без утечки внутренних ошибок)
+- [x] Bot: `bodyLimit` + rate limit + единый error/notFound handler
+- [x] Auth: уменьшен TTL `X-Init-Data` (по умолчанию 15 минут) + anti-replay по `query_id`
+- [x] Cart: сериализация мутаций на сервере (advisory lock) и на клиенте (очередь мутаций)
 
 ### Очередь
 
-- [ ] Линтер в CI для всех пакетов (`eslint` / `biome` — выбрать один стек)
-- [ ] E2E: Playwright, минимум smoke (каталог → корзина → checkout) — **e2e-testing skill**
+- [x] Линтер в CI: **Biome** через `pnpm exec turbo run lint` (`.github/workflows/ci.yml`)
+- [x] E2E: Playwright smoke (каталог → переход в корзину) — `packages/e2e/tests/smoke.spec.ts`
+- [ ] Запуск E2E в GitHub Actions (сервер/фикстуры/таймауты) — по необходимости
 - [ ] Опционально: контрактные тесты критичных API
 - [ ] Мониторинг: uptime `/health`, алерты по 5xx (хостинг или UptimeRobot)
 - [ ] `pnpm audit` в CI или Dependabot
+
+### Инструменты разработчика (Cursor)
+
+- [x] Скрипт и конфиг MCP **Ruflo**: `scripts/setup-ruflo-cursor.sh`, корневой `.mcp.json`, проектный `.cursor/mcp.json` (`npx -y ruflo@latest mcp start`)
 
 ---
 
@@ -188,4 +201,4 @@ Telegram Mini App — доставка цветов, Каменск-Уральс
 2. Не удаляйте выполненные пункты — так видна история объёма.
 3. Краткий снимок для Cursor: `.cursor/rules/project-overview.mdc`.
 
-*Последнее обновление: март 2026.*
+*Последнее обновление: 15 апреля 2026.*

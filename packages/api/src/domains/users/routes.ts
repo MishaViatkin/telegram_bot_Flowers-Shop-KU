@@ -1,8 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { promoCodes, referrals, users } from "../../infra/db/schema.js";
 import { ensureUser } from "../cart/routes.js";
+
+const referralBodySchema = z.object({
+  referrerCode: z
+    .string()
+    .trim()
+    .min(1, "referrerCode is required")
+    .max(128, "referrerCode is too long"),
+});
 
 async function findReferrerByInviteCode(app: FastifyInstance, code: string) {
   const [byRefCode] = await app.db
@@ -50,20 +59,15 @@ export async function usersRoutes(app: FastifyInstance) {
     const userId = request.userId;
     await ensureUser(app, userId);
 
-    const body = request.body as { referrerCode?: unknown };
-    const code = typeof body.referrerCode === "string" ? body.referrerCode.trim() : "";
-    if (code.length > 128) {
+    const parsedBody = referralBodySchema.safeParse(request.body);
+    if (!parsedBody.success) {
+      const first = parsedBody.error.issues[0];
       return reply.status(400).send({
         success: false,
-        error: { code: "BAD_REQUEST", message: "referrerCode is too long" },
+        error: { code: "BAD_REQUEST", message: first?.message ?? "Invalid request body" },
       });
     }
-    if (!code) {
-      return reply.status(400).send({
-        success: false,
-        error: { code: "BAD_REQUEST", message: "referrerCode is required" },
-      });
-    }
+    const code = parsedBody.data.referrerCode;
 
     const [currentUser] = await app.db.select().from(users).where(eq(users.id, userId)).limit(1);
     if (!currentUser) {

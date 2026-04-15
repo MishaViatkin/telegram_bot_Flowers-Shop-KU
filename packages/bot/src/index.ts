@@ -1,5 +1,7 @@
 import "dotenv/config";
 import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import type { FastifyRequest } from "fastify";
 import Fastify from "fastify";
 import { Bot } from "grammy";
 import { handleHelp } from "./bot/commands/help.js";
@@ -73,6 +75,10 @@ bot.on("message:text", async (ctx) => {
 });
 
 const app = Fastify({
+  bodyLimit:
+    Number(process.env.BOT_BODY_LIMIT_BYTES) > 0
+      ? Number(process.env.BOT_BODY_LIMIT_BYTES)
+      : 64 * 1024,
   logger: {
     level: process.env.LOG_LEVEL ?? "info",
     redact: [
@@ -83,6 +89,27 @@ const app = Fastify({
   },
 });
 await app.register(helmet, { contentSecurityPolicy: false });
+await app.register(rateLimit, {
+  global: true,
+  max: Number(process.env.BOT_RATE_LIMIT_MAX) || 120,
+  timeWindow: Number(process.env.BOT_RATE_LIMIT_WINDOW_MS) || 60_000,
+  allowList: (request: FastifyRequest) => {
+    const url = request.url.split("?")[0] ?? request.url;
+    return url === "/health";
+  },
+});
+
+app.setNotFoundHandler(async (_request, reply) => {
+  return reply.status(404).send({ error: "Not found" });
+});
+
+app.setErrorHandler(async (err, request, reply) => {
+  request.log.error({ err, url: request.url, reqId: request.id }, "Unhandled error");
+  const statusCode = (err as { statusCode?: number }).statusCode ?? 500;
+  const message = statusCode >= 500 ? "Internal error" : (err as Error).message || "Bad request";
+  return reply.status(statusCode).send({ error: message });
+});
+
 registerTelegramWebhook(app, bot);
 
 app.get("/health", async () => ({ status: "ok", service: "bot" }));
@@ -93,23 +120,25 @@ app.get("/health", async () => ({ status: "ok", service: "bot" }));
  */
 app.post<{ Body: OrderNotificationPayload }>("/internal/notify", async (request, reply) => {
   const secret = process.env.INTERNAL_API_SECRET?.trim();
-  if (process.env.NODE_ENV === "production") {
-    if (!secret) {
-      return reply.status(503).send({ error: "INTERNAL_API_SECRET is not configured" });
-    }
-    const provided = request.headers["x-internal-secret"];
-    if (typeof provided !== "string" || !timingSafeEqualString(provided, secret)) {
-      return reply.status(403).send({ error: "Forbidden" });
-    }
-  } else if (secret) {
-    const provided = request.headers["x-internal-secret"];
-    if (typeof provided !== "string" || !timingSafeEqualString(provided, secret)) {
-      return reply.status(403).send({ error: "Forbidden" });
-    }
+  if (!secret) {
+    return reply.status(503).send({ error: "INTERNAL_API_SECRET is not configured" });
+  }
+  const provided = request.headers["x-internal-secret"];
+  if (typeof provided !== "string" || !timingSafeEqualString(provided, secret)) {
+    return reply.status(403).send({ error: "Forbidden" });
   }
 
   const payload = request.body;
-  if (!payload?.telegramId || !payload?.orderId || !payload?.status) {
+  if (
+    !payload ||
+    typeof payload.telegramId !== "number" ||
+    !Number.isInteger(payload.telegramId) ||
+    payload.telegramId <= 0 ||
+    typeof payload.orderId !== "string" ||
+    !payload.orderId.trim() ||
+    typeof payload.status !== "string" ||
+    !payload.status.trim()
+  ) {
     return reply.status(400).send({ error: "Missing required fields" });
   }
 

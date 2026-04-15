@@ -83,6 +83,9 @@ importers:
       '@fastify/helmet':
         specifier: ^13.0.1
         version: 13.0.2
+      '@fastify/rate-limit':
+        specifier: ^10.3.0
+        version: 10.3.0
       '@flowers-tg/shared':
         specifier: workspace:*
         version: link:../shared
